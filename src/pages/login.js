@@ -32,7 +32,7 @@ export default function Login() {
       console.log("Usuário:", data.user);
 
       // ✅ REDIRECIONA PARA PÁGINA DO USUÁRIO
-      navigate('/edit-freelancer'); // ou para a página que você quiser
+      navigate('/profile'); // ou para a página que você quiser
 
     } catch (error) {
       console.error('❌ Erro completo:', error);
