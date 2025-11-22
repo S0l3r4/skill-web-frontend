@@ -3,7 +3,7 @@ import { Mail, Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient.js";
-; 
+;
 
 export default function SignUp() {
   const [type, setType] = useState("");
@@ -25,66 +25,27 @@ export default function SignUp() {
     }
 
     try {
-      // 1) Criar usuário no Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: data.email,
-        password: data.senha,
+      // ✅ CHAMA SEU BACKEND, não o Supabase diretamente
+      const response = await fetch('https://skill-web-backend.onrender.com/api/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,
+          senha: data.senha,
+          name: data.name,
+          type: data.type,
+          cpf: data.cpf,
+          cnpj: data.cnpj,
+          birthday: data.birthday
+        }),
       });
 
-      if (authError) {
-        alert("❌ Erro no cadastro: " + authError.message);
-        setLoading(false);
-        return;
-      }
+      const result = await response.json();
 
-      const userId = authData.user.id;
-
-      // 2) Inserir na tabela USER
-      const { error: userError } = await supabase.from("USER").insert([
-        {
-          id_user: userId,
-          nome: data.name,
-          email: data.email,
-        },
-      ]);
-
-      if (userError) {
-        alert("❌ Erro ao salvar na tabela USER: " + userError.message);
-        setLoading(false);
-        return;
-      }
-
-      // 3) Inserir em FREELANCER
-      if (data.type === "freelancer") {
-        const { error: freelancerError } = await supabase.from("FREELANCER").insert([
-          {
-            id_user: userId,
-            cpf: data.cpf,
-            nascimento: data.birthday,
-          },
-        ]);
-
-        if (freelancerError) {
-          alert("❌ Erro ao salvar FREELANCER: " + freelancerError.message);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // 4) Inserir em COMPANY
-      if (data.type === "empresa") {
-        const { error: companyError } = await supabase.from("COMPANY").insert([
-          {
-            id_user: userId,
-            cnpj: data.cnpj,
-          },
-        ]);
-
-        if (companyError) {
-          alert("❌ Erro ao salvar COMPANY: " + companyError.message);
-          setLoading(false);
-          return;
-        }
+      if (!response.ok) {
+        throw new Error(result.error);
       }
 
       alert("✅ Cadastro realizado com sucesso!");
@@ -92,8 +53,8 @@ export default function SignUp() {
       setType("");
 
     } catch (err) {
-      console.error("Erro geral:", err);
-      alert("❌ Erro inesperado no cadastro.");
+      console.error("Erro no cadastro:", err);
+      alert("❌ Erro no cadastro: " + err.message);
     } finally {
       setLoading(false);
     }
