@@ -1,5 +1,5 @@
 import '../styles/index.css';
-import '../styles/profiles.css';
+import '../styles/profile.css';
 import { Mail, Instagram, Edit, RefreshCw, Linkedin, Calendar, Briefcase, MapPin, Phone, Globe } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
