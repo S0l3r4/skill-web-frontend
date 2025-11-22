@@ -29,7 +29,7 @@ export default function Profile() {
 
       // Buscar dados do usuário na tabela USER
       const { data: userData, error: userError } = await supabase
-        .from("user")
+        .from('"user"')
         .select("*")
         .eq("email_user", session.user.email)
         .single();
