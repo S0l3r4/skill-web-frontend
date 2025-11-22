@@ -10,65 +10,85 @@ export default function Debug() {
 
   const testDatabase = async () => {
     try {
-      let debugInfo = '# 🔍 DEBUG DO BANCO DE DADOS\n\n';
+      let debugInfo = '# 🔍 DEBUG DETALHADO DO BANCO\n\n';
 
-      // 1. Testar sessão
+      // 1. Sessão
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       debugInfo += '## 1. SESSÃO:\n';
       debugInfo += `- Logado: ${session ? 'SIM' : 'NÃO'}\n`;
-      debugInfo += `- Email: ${session?.user?.email || 'N/A'}\n`;
-      debugInfo += `- Erro: ${sessionError?.message || 'Nenhum'}\n\n`;
+      debugInfo += `- Email: ${session?.user?.email || 'N/A'}\n\n`;
 
       if (session) {
-        // 2. Testar tabela USER
-        debugInfo += '## 2. TABELA USER:\n';
+        // 2. VER TODOS OS DADOS DA TABELA USER
+        debugInfo += '## 2. TODOS OS DADOS DA TABELA USER:\n';
         
-        // Tentar buscar todos os registros
         const { data: allUsers, error: allError } = await supabase
           .from('user')
           .select('*');
         
         debugInfo += `- Total de registros: ${allUsers?.length || 0}\n`;
-        debugInfo += `- Erro: ${allError?.message || 'Nenhum'}\n`;
         
         if (allUsers && allUsers.length > 0) {
-          debugInfo += '- Primeiro registro:\n';
-          debugInfo += '```json\n' + JSON.stringify(allUsers[0], null, 2) + '\n```\n';
+          debugInfo += '- TODOS os registros:\n';
+          allUsers.forEach((user, index) => {
+            debugInfo += `\n### Registro ${index + 1}:\n`;
+            debugInfo += '```json\n' + JSON.stringify(user, null, 2) + '\n```\n';
+          });
+        } else {
+          debugInfo += '- ❌ TABELA VAZIA\n';
         }
 
-        // 3. Buscar usuário específico
-        debugInfo += `\n## 3. BUSCA POR: ${session.user.email}\n`;
+        // 3. TESTAR DIFERENTES FORMAS DE BUSCA
+        debugInfo += '\n## 3. TESTES DE BUSCA:\n';
         
-        const { data: userData, error: userError } = await supabase
+        const testEmail = session.user.email;
+        
+        // Teste 1: Busca com eq (exact match)
+        const { data: user1, error: e1 } = await supabase
           .from('user')
           .select('*')
-          .eq('email_user', session.user.email)
-          .single();
-        
-        debugInfo += `- Encontrado: ${userData ? 'SIM' : 'NÃO'}\n`;
-        debugInfo += `- Erro: ${userError?.message || 'Nenhum'}\n`;
-        
-        if (userData) {
-          debugInfo += '- Dados encontrados:\n';
-          debugInfo += '```json\n' + JSON.stringify(userData, null, 2) + '\n```\n';
-        }
+          .eq('email_user', testEmail);
+        debugInfo += `- Busca 'eq(${testEmail})': ${user1?.length || 0} resultados\n`;
+        debugInfo += `  Erro: ${e1?.message || 'Nenhum'}\n`;
 
-        // 4. Testar outras tabelas
-        debugInfo += '\n## 4. OUTRAS TABELAS:\n';
-        
-        // Testar freelancer
-        const { data: freelancers, error: freeError } = await supabase
-          .from('freelancer')
+        // Teste 2: Busca com ilike (case insensitive)
+        const { data: user2, error: e2 } = await supabase
+          .from('user')
           .select('*')
-          .limit(1);
-        debugInfo += `- Freelancer: ${freelancers?.length || 0} registros\n`;
-        
-        // Testar company  
-        const { data: companies, error: compError } = await supabase
-          .from('company')
+          .ilike('email_user', testEmail);
+        debugInfo += `- Busca 'ilike(${testEmail})': ${user2?.length || 0} resultados\n`;
+        debugInfo += `  Erro: ${e2?.message || 'Nenhum'}\n`;
+
+        // Teste 3: Buscar por qualquer campo que contenha email
+        const { data: user3, error: e3 } = await supabase
+          .from('user')
           .select('*')
-          .limit(1);
-        debugInfo += `- Company: ${companies?.length || 0} registros\n`;
+          .ilike('email', testEmail);
+        debugInfo += `- Busca 'ilike(email)': ${user3?.length || 0} resultados\n`;
+
+        // Teste 4: Buscar TODOS os campos de texto
+        const { data: user4, error: e4 } = await supabase
+          .from('user')
+          .select('*')
+          .textSearch('email_user', testEmail);
+        debugInfo += `- Busca 'textSearch': ${user4?.length || 0} resultados\n`;
+
+        // 4. VER ESTRUTURA EXATA DOS CAMPOS
+        debugInfo += '\n## 4. ESTRUTURA DOS DADOS:\n';
+        if (allUsers && allUsers.length > 0) {
+          const firstUser = allUsers[0];
+          debugInfo += '- Campos do primeiro registro:\n';
+          Object.keys(firstUser).forEach(key => {
+            debugInfo += `  - ${key}: ${typeof firstUser[key]} = "${firstUser[key]}"\n`;
+          });
+          
+          // Verificar emails exatos
+          debugInfo += '\n- Emails encontrados na tabela:\n';
+          allUsers.forEach(user => {
+            const emailField = user.email_user || user.email;
+            debugInfo += `  - "${emailField}"\n`;
+          });
+        }
       }
 
       setResult(debugInfo);
@@ -80,7 +100,7 @@ export default function Debug() {
 
   return (
     <div style={{ padding: '20px', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-      <h1>🛠️ Debug do Banco de Dados</h1>
+      <h1>🛠️ Debug Detalhado</h1>
       <button onClick={testDatabase} style={{ padding: '10px', margin: '10px 0' }}>
         🔄 Executar Testes Novamente
       </button>
@@ -89,7 +109,9 @@ export default function Debug() {
         padding: '15px', 
         borderRadius: '5px', 
         border: '1px solid #ddd',
-        marginTop: '10px'
+        marginTop: '10px',
+        maxHeight: '80vh',
+        overflow: 'auto'
       }}>
         {result}
       </div>

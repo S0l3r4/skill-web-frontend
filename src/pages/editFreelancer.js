@@ -56,7 +56,7 @@ export default function EditFreelancer() {
 
       // Buscar dados do usuário na tabela USER
       const { data: userData, error: userError } = await supabase
-        .from("user")
+        .from('user')
         .select("*")
         .eq("email_user", session.user.email)
         .single();
@@ -70,7 +70,7 @@ export default function EditFreelancer() {
 
       // Buscar dados do freelancer
       const { data: freelancerData, error: freelancerError } = await supabase
-        .from("freelancer")
+        .from('freelancer')
         .select("*")
         .eq("id_user", userData.id_user)
         .single();
@@ -81,7 +81,7 @@ export default function EditFreelancer() {
 
       // Buscar habilidades
       const { data: skillsData, error: skillsError } = await supabase
-        .from("skills")
+        .from('skills')
         .select("*")
         .eq("id_freelancer", freelancerData?.id_freelancer)
         .single();
@@ -163,7 +163,7 @@ export default function EditFreelancer() {
 
       // Buscar ID do usuário
       const { data: userData, error: userError } = await supabase
-        .from("user")
+        .from('user')
         .select("id_user")
         .eq("email_user", session.user.email)
         .single();
@@ -176,7 +176,7 @@ export default function EditFreelancer() {
 
       // 1. Atualizar tabela USER
       const { error: userUpdateError } = await supabase
-        .from("user")
+        .from('user')
         .update({
           name_user: formData.name_user,
           phone_user: formData.phone_user,
@@ -194,7 +194,7 @@ export default function EditFreelancer() {
 
       // 2. Buscar ID do freelancer
       const { data: freelancerData, error: freelancerFetchError } = await supabase
-        .from("freelancer")
+        .from('freelancer')
         .select("id_freelancer")
         .eq("id_user", userId)
         .single();
@@ -205,7 +205,7 @@ export default function EditFreelancer() {
       if (freelancerId) {
         // Atualizar freelancer existente
         const { error: freelancerUpdateError } = await supabase
-          .from("freelancer")
+          .from('freelancer')
           .update({
             cpf_freelancer: formData.cpf_freelancer,
             birthday_freelancer: formData.birthday_freelancer,
@@ -220,7 +220,7 @@ export default function EditFreelancer() {
       } else {
         // Criar novo freelancer
         const { data: newFreelancer, error: freelancerCreateError } = await supabase
-          .from("freelancer")
+          .from('freelancer')
           .insert([
             {
               id_user: userId,
@@ -242,7 +242,7 @@ export default function EditFreelancer() {
       // 4. Atualizar/Criar habilidades
       if (freelancerId) {
         const { data: existingSkills, error: skillsFetchError } = await supabase
-          .from("skills")
+          .from('skills')
           .select("id_skill")
           .eq("id_freelancer", freelancerId)
           .single();
@@ -250,7 +250,7 @@ export default function EditFreelancer() {
         if (existingSkills) {
           // Atualizar habilidades existentes
           const { error: skillsUpdateError } = await supabase
-            .from("skills")
+            .from('skills')
             .update({
               skill_1: formData.skill_1,
               skill_2: formData.skill_2,
@@ -267,7 +267,7 @@ export default function EditFreelancer() {
         } else {
           // Criar novas habilidades
           const { error: skillsCreateError } = await supabase
-            .from("skills")
+            .from('skills')
             .insert([
               {
                 id_freelancer: freelancerId,
