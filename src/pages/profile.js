@@ -13,62 +13,68 @@ export default function Profile() {
 
   // ✅ BUSCAR PERFIL COM AUTENTICAÇÃO SUPABASE
   const fetchUserProfile = async () => {
+  try {
+    setLoading(true);
+    setError('');
+    console.log("🔄 Iniciando teste...");
+
+    // ✅ TESTE 1: Rota simples (sem auth)
+    console.log("🧪 Testando rota /api/profile/test...");
     try {
-      setLoading(true);
-      setError('');
-      console.log("🔄 Buscando perfil via backend...");
-
-      // ✅ OBTER SESSÃO ATUAL DO SUPABASE
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        throw new Error("Usuário não autenticado - faça login novamente");
-      }
-
-      const token = session.access_token;
-      console.log("🔐 Token obtido:", token ? "Sim" : "Não");
-
-      // ✅ CHAMAR BACKEND COM TOKEN
-      const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}` // ✅ Enviar token JWT
-        }
-      });
-
-      console.log("📥 Status da resposta:", response.status);
-
-      if (response.status === 401) {
-        throw new Error("Sessão expirada - faça login novamente");
-      }
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Erro do servidor: ${response.status} - ${errorText}`);
-      }
-
-      const result = await response.json();
-      console.log("📦 Dados recebidos:", result);
-
-      if (result.success) {
-        setUser(result.user);
-        console.log("✅ Perfil carregado com sucesso!");
+      const testResponse = await fetch('https://skill-web-backend.onrender.com/api/profile/test');
+      console.log("🧪 Teste status:", testResponse.status);
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log("✅ Rota test OK:", testData);
       } else {
-        throw new Error(result.error || 'Erro ao carregar perfil');
+        console.log("❌ Rota test FALHOU:", testResponse.status);
       }
-
-    } catch (error) {
-      console.error('💥 Erro completo:', error);
-      setError(error.message);
-
-      if (error.message.includes('não autenticado') || error.message.includes('Sessão expirada')) {
-        setTimeout(() => navigate('/login'), 2000);
-      }
-    } finally {
-      setLoading(false);
+    } catch (testError) {
+      console.log("❌ Erro no teste:", testError.message);
     }
-  };
+
+    // ✅ TESTE 2: Rota profile (com auth)
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    console.log("🔐 Tentando rota profile...");
+    const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+
+    console.log("📥 Status:", response.status);
+    
+    if (response.status === 404) {
+      throw new Error("Rota não encontrada - backend precisa ser configurado");
+    }
+    
+    if (!response.ok) {
+      throw new Error(`Erro HTTP: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("📦 Dados:", result);
+
+    if (result.success) {
+      setUser(result.user);
+    } else {
+      throw new Error(result.error || 'Erro no servidor');
+    }
+
+  } catch (error) {
+    console.error('💥 Erro:', error);
+    setError(error.message);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchUserProfile();
