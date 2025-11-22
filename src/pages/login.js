@@ -1,4 +1,3 @@
-import { useState } from "react";
 import '../styles/index.css';
 import { Mail, Instagram } from "lucide-react";
 import { useState } from 'react';
