@@ -30,77 +30,69 @@ export default function EditCompany() {
     fetchUserData();
   }, []);
 
-  const fetchUserData = async () => {
-    try {
-      setLoadingData(true);
-      setError('');
-      console.log("🔄 Buscando dados da empresa no Supabase...");
+const fetchUserData = async () => {
+  try {
+    setLoadingData(true);
+    setError('');
+    console.log("🔄 Buscando dados da empresa via backend...");
 
-      // Verificar sessão atual
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    // Verificar sessão atual
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      throw new Error("Usuário não está logado. Faça login novamente.");
+    }
+
+    console.log("✅ Sessão ativa:", session.user.email);
+
+    const token = session.access_token;
+
+    // ✅ USAR BACKEND (igual ao profile) - CORRIGIDO!
+    const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar dados: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log("📦 Dados recebidos do backend:", result);
+
+    if (result.success) {
+      const user = result.user;
       
-      if (sessionError || !session) {
-        throw new Error("Usuário não está logado. Faça login novamente.");
-      }
-
-      console.log("✅ Sessão ativa:", session.user.email);
-
-      // Buscar dados do usuário na tabela USER
-      const { data: userData, error: userError } = await supabase
-        .from("user")
-        .select("*")
-        .eq("email_user", session.user.email)
-        .single();
-
-      if (userError) {
-        console.error("❌ Erro ao buscar usuário:", userError);
-        throw new Error("Erro ao carregar dados da empresa");
-      }
-
-      console.log("📦 Dados do usuário:", userData);
-
-      // Buscar dados da empresa
-      const { data: companyData, error: companyError } = await supabase
-        .from("company")
-        .select("*")
-        .eq("id_user", userData.id_user)
-        .single();
-
-      if (companyError && companyError.code !== 'PGRST116') {
-        console.error("❌ Erro ao buscar empresa:", companyError);
-      }
-
-      // Combinar todos os dados
-      setUser({
-        ...session.user,
-        ...userData,
-        ...companyData
-      });
-
       // Preencher formulário
       setFormData({
-        name_user: userData.name_user || '',
-        email_user: session.user.email || '',
-        cnpj_company: companyData?.cnpj_company || '',
-        phone_user: userData.phone_user || '',
-        city_user: userData.city_user || '',
-        state_user: userData.state_user || '',
-        linkedin_link_user: userData.linkedin_link_user || '',
-        insta_link_user: userData.insta_link_user || '',
-        bio_user: userData.bio_user || '',
+        name_user: user.name_user || '',
+        email_user: user.email_user || '',
+        cnpj_company: user.cnpj_company || '',
+        phone_user: user.phone_user || '',
+        city_user: user.city_user || '',
+        state_user: user.state_user || '',
+        linkedin_link_user: user.linkedin_link_user || '',
+        insta_link_user: user.insta_link_user || '',
+        bio_user: user.bio_user || '',
         senha: '',
         confirmarSenha: ''
       });
-
+      
       console.log("✅ Formulário da empresa preenchido com sucesso!");
-
-    } catch (error) {
-      console.error('❌ Erro ao carregar dados:', error);
-      setError(error.message);
-    } finally {
-      setLoadingData(false);
+    } else {
+      throw new Error(result.error || 'Erro ao carregar dados');
     }
-  };
+
+  } catch (error) {
+    console.error('❌ Erro ao carregar dados:', error);
+    setError(error.message);
+  } finally {
+    setLoadingData(false);
+  }
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

@@ -373,7 +373,7 @@ export default function Profile() {
           )}
 
           {user?.type_user === 'freelancer' && (
-            <Link to="/editarFreelancer" className="edit-profile-btn">
+            <Link to="/editar" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
             </Link>
