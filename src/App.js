@@ -9,7 +9,6 @@ import SignUp from "./pages/signUp.js";
 import EditFreelancer from "./pages/editFreelancer.js";
 import EditCompany from "./pages/editCompany.js";
 import UserProfile from "./pages/profile.js";
-import Debug from './pages/debug.js';
 
 
 
@@ -23,7 +22,6 @@ function App() {
         <Route path="/editar" element={<EditFreelancer />} />
         <Route path="/editarEmpresa" element={<EditCompany />} />
         <Route path="/profile" element={<UserProfile />} />
-        <Route path="/debug" element={<Debug />} />
       </Routes>
     </Router>
   );
