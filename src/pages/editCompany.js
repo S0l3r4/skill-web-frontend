@@ -25,7 +25,7 @@ export default function EditCompany() {
   
   const navigate = useNavigate();
 
-  // ✅ CARREGAR DADOS DIRETO DO SUPABASE
+  // CARREGAR DADOS DIRETO DO SUPABASE
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -34,7 +34,7 @@ const fetchUserData = async () => {
   try {
     setLoadingData(true);
     setError('');
-    console.log("🔄 Buscando dados da empresa via backend...");
+    console.log("Buscando dados da empresa via backend...");
 
     // Verificar sessão atual
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -43,11 +43,11 @@ const fetchUserData = async () => {
       throw new Error("Usuário não está logado. Faça login novamente.");
     }
 
-    console.log("✅ Sessão ativa:", session.user.email);
+    console.log("Sessão ativa:", session.user.email);
 
     const token = session.access_token;
 
-    // ✅ USAR BACKEND (igual ao profile) - CORRIGIDO!
+    // USAR BACKEND (igual ao profile) - CORRIGIDO!
     const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
       method: 'GET',
       headers: {
@@ -81,13 +81,13 @@ const fetchUserData = async () => {
         confirmarSenha: ''
       });
       
-      console.log("✅ Formulário da empresa preenchido com sucesso!");
+      console.log("Formulário da empresa preenchido com sucesso!");
     } else {
       throw new Error(result.error || 'Erro ao carregar dados');
     }
 
   } catch (error) {
-    console.error('❌ Erro ao carregar dados:', error);
+    console.error('Erro ao carregar dados:', error);
     setError(error.message);
   } finally {
     setLoadingData(false);
@@ -102,7 +102,7 @@ const fetchUserData = async () => {
     }));
   };
 
-  // ✅ ATUALIZAR DADOS DIRETO NO SUPABASE
+  // ATUALIZAR DADOS DIRETO NO SUPABASE
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -206,12 +206,12 @@ const fetchUserData = async () => {
         }
       }
 
-      alert("✅ Dados da empresa atualizados com sucesso!");
+      alert("Dados da empresa atualizados com sucesso!");
       navigate('/profile');
 
     } catch (error) {
-      console.error('❌ Erro ao atualizar dados:', error);
-      alert('❌ Erro ao atualizar dados: ' + error.message);
+      console.error('Erro ao atualizar dados:', error);
+      alert('Erro ao atualizar dados: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -235,8 +235,6 @@ const fetchUserData = async () => {
     }));
   };
 
-  // ✅ RESTANTE DO CÓDIGO (JSX MANTIDO IGUAL) - só ajustei os "name" dos inputs
-  // Tela de carregamento (mantido igual)
   if (loadingData) {
     return (
       <div className="signUp">
@@ -264,7 +262,6 @@ const fetchUserData = async () => {
     );
   }
 
-  // Tela de erro (mantido igual)
   if (error) {
     return (
       <div className="signUp">
@@ -524,7 +521,7 @@ const fetchUserData = async () => {
 
             {/* BOTÕES DE AÇÃO - BLOCO 6 */}
             <div className="form-section-edit" style={{ marginBottom: '20px' }}>
-              <h3 className="section-title">✅ Finalizar Edição</h3>
+              <h3 className="section-title">Finalizar Edição</h3>
               
               <div className="form-info-edit">
                 Revise todas as informações antes de salvar. Após a confirmação, 

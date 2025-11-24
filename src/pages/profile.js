@@ -11,24 +11,24 @@ export default function Profile() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // ✅ BUSCAR PERFIL COM AUTENTICAÇÃO SUPABASE
+  // BUSCAR PERFIL COM AUTENTICAÇÃO SUPABASE
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
       setError('');
       console.log("🔄 Buscando perfil via backend...");
 
-      // ✅ OBTER SESSÃO ATUAL DO SUPABASE
+      // OBTER SESSÃO ATUAL DO SUPABASE
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+
       if (sessionError || !session) {
         throw new Error("Usuário não autenticado - faça login novamente");
       }
 
       const token = session.access_token;
-      console.log("🔐 Token obtido:", token ? "Sim" : "Não");
+      console.log("Token obtido:", token ? "Sim" : "Não");
 
-      // ✅ CHAMAR BACKEND COM TOKEN
+      // CHAMAR BACKEND COM TOKEN
       const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
         method: 'GET',
         headers: {
@@ -37,7 +37,7 @@ export default function Profile() {
         }
       });
 
-      console.log("📥 Status da resposta:", response.status);
+      console.log("Status da resposta:", response.status);
 
       if (response.status === 401) {
         throw new Error("Sessão expirada - faça login novamente");
@@ -49,17 +49,17 @@ export default function Profile() {
       }
 
       const result = await response.json();
-      console.log("📦 Dados recebidos:", result);
+      console.log("Dados recebidos:", result);
 
       if (result.success) {
         setUser(result.user);
-        console.log("✅ Perfil carregado com sucesso!");
+        console.log("Perfil carregado com sucesso!");
       } else {
         throw new Error(result.error || 'Erro ao carregar perfil');
       }
 
     } catch (error) {
-      console.error('💥 Erro completo:', error);
+      console.error('Erro completo:', error);
       setError(error.message);
 
       if (error.message.includes('não autenticado') || error.message.includes('Sessão expirada')) {
@@ -74,7 +74,7 @@ export default function Profile() {
     fetchUserProfile();
   }, []);
 
-  // ✅ LOGOUT CORRETO
+  // LOGOUT CORRETO
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -102,15 +102,17 @@ export default function Profile() {
     }
   };
 
-  const formatDocument = (doc, type) => {
-    if (!doc) return 'Não informado';
-    const numbers = doc.replace(/\D/g, '');
-    if (type === 'freelancer') {
-      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    } else if (type === 'empresa') {
-      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  const formatDocument = (document, type) => {
+    if (!document) return 'Não informado';
+
+    // Converte para string primeiro
+    const docString = document.toString();
+
+    if (type === 'freelancer' && docString.length === 11) {
+      return docString.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
-    return doc;
+
+    return docString;
   };
 
   // Estados de loading
@@ -129,10 +131,15 @@ export default function Profile() {
             </button>
           </div>
         </header>
-        <div className="loading-container">
-          <div className="loading-spinner-large"></div>
+        <div class="loading-container">
+          <div class="loading-spinner-large"></div>
           <p>Carregando seu perfil...</p>
           <small>Autenticando e buscando dados</small>
+          <div class="loading-dots">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+          </div>
         </div>
       </div>
     );
@@ -156,7 +163,7 @@ export default function Profile() {
         </header>
         <div className="error-container">
           <div className="error-message">
-            <h3>❌ Erro ao carregar perfil</h3>
+            <h3>Erro ao carregar perfil</h3>
             <p>{error}</p>
             <div className="error-actions">
               <button onClick={handleLogout} className="btn-cancel">
@@ -172,7 +179,6 @@ export default function Profile() {
     );
   }
 
-  // ✅ JSX - usando as chaves corretas
   return (
     <div className="profile">
       <header>
@@ -379,7 +385,7 @@ export default function Profile() {
             </Link>
           )}
         </div>
-        
+
       </section>
 
       <footer className="footer">

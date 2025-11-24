@@ -15,28 +15,28 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // ✅ LOGIN DIRETO COM SUPABASE (igual ao cadastro)
+      // LOGIN DIRETO COM SUPABASE (igual ao cadastro)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password: senha,
       });
 
       if (error) {
-        alert("❌ Erro no login: " + error.message);
+        alert("Erro no login: " + error.message);
         return;
       }
 
-      // ✅ LOGIN BEM-SUCEDIDO
-      console.log("✅ Login realizado com sucesso!");
+      //LOGIN BEM-SUCEDIDO
+      console.log("Login realizado com sucesso!");
       console.log("Sessão:", data.session);
       console.log("Usuário:", data.user);
 
-      // ✅ REDIRECIONA PARA PÁGINA DO USUÁRIO
+      //REDIRECIONA PARA PÁGINA DO USUÁRIO
       navigate('/profile'); // ou para a página que você quiser
 
     } catch (error) {
-      console.error('❌ Erro completo:', error);
-      alert('❌ Erro inesperado: ' + error.message);
+      console.error('Erro completo:', error);
+      alert('Erro inesperado: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ export default function Login() {
                 className="btnsubmit" 
                 disabled={loading}
               >
-                {loading ? "🔄 Entrando..." : "Entrar"}
+                {loading ? "Entrando..." : "Entrar"}
               </button>
             </div>
 
