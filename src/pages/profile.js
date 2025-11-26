@@ -56,6 +56,7 @@ export default function Profile() {
       if (result.success) {
         setUser(result.user);
         console.log("Perfil carregado com sucesso!");
+        console.log("Skills recebidas:", result.user.skills);
       } else {
         throw new Error(result.error || 'Erro ao carregar perfil');
       }

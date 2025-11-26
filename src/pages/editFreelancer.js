@@ -9,7 +9,7 @@ export default function EditFreelancer() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -32,7 +32,7 @@ export default function EditFreelancer() {
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         const user = result.user;
         setForm({
@@ -77,7 +77,7 @@ export default function EditFreelancer() {
         skills: form.skills.filter(skill => skill.trim() !== '')
       };
 
-      console.log('Enviando skills:', dataToSend.skills);
+      console.log('Enviando payload:', dataToSend);
 
       const response = await fetch('https://skill-web-backend.onrender.com/api/update-profile', {
         method: 'POST',
@@ -89,15 +89,18 @@ export default function EditFreelancer() {
       });
 
       const result = await response.json();
-      
+      console.log('Resposta do backend:', result);
+
       if (result.success) {
-        alert('Perfil salvo!');
+        alert('Perfil salvo com sucesso!');
         navigate('/profile');
       } else {
-        alert('Erro: ' + result.error);
+        console.error('Erro retornado pelo backend:', result);
+        alert('Erro ao salvar: ' + (result.error || 'Erro desconhecido'));
       }
 
     } catch (error) {
+      console.error('Erro na requisição:', error);
       alert('Erro ao salvar: ' + error.message);
     } finally {
       setSaving(false);
@@ -133,11 +136,11 @@ export default function EditFreelancer() {
         </div>
 
         <form onSubmit={handleSubmit} className="signUp-form edit-form">
-          
+
           {/* DADOS BÁSICOS */}
           <div className="form-section-edit">
             <h3>Dados Pessoais</h3>
-            
+
             <div className="form-group">
               <label>Nome *</label>
               <input
@@ -176,7 +179,7 @@ export default function EditFreelancer() {
           <div className="form-section-edit">
             <h3>Habilidades</h3>
             <p>Adicione suas principais habilidades</p>
-            
+
             {form.skills.map((skill, index) => (
               <div key={index} className="form-group">
                 <label>Habilidade {index + 1}</label>

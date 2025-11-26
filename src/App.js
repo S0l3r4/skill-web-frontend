@@ -5,7 +5,7 @@ import './styles/App.css';
 
 import LandingPage from "./pages/landingpage.js";
 import Login from "./pages/login.js";
-import SignUp from "./pages/signUp.js"; 
+import SignUp from "./pages/signUp.js";
 import EditFreelancer from "./pages/editFreelancer.js";
 import EditCompany from "./pages/editCompany.js";
 import UserProfile from "./pages/profile.js";
@@ -19,8 +19,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<SignUp />} />
-        <Route path="/editar" element={<EditFreelancer />} />
-        <Route path="/editarEmpresa" element={<EditCompany />} />
+        <Route path="/editar-freelancer" element={<EditFreelancer />} />
+        <Route path="/editar-empresa" element={<EditCompany />} />
         <Route path="/profile" element={<UserProfile />} />
       </Routes>
     </Router>
