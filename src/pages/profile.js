@@ -1,6 +1,6 @@
 import '../styles/index.css';
 import '../styles/profile.css';
-import { Mail, Instagram, Edit, RefreshCw, Linkedin, Calendar, Briefcase, MapPin, Phone, Globe, LogOut } from "lucide-react";
+import { Mail, Instagram, Edit, RefreshCw, Linkedin, Calendar, Briefcase, MapPin, Phone, Globe } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient.js";
@@ -11,24 +11,25 @@ export default function Profile() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // BUSCAR PERFIL COM AUTENTICAÇÃO SUPABASE
+  // Função para buscar o perfil
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
       setError('');
-      console.log("Buscando perfil via backend...");
+      console.log("Iniciando busca do perfil...");
 
-      // OBTER SESSÃO ATUAL DO SUPABASE
+      // Verificar sessão do Supabase
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
-        throw new Error("Usuário não autenticado - faça login novamente");
+        throw new Error("Usuário não está logado. Faça login novamente.");
       }
 
       const token = session.access_token;
       console.log("Token obtido:", token ? "Sim" : "Não");
 
-      // CHAMAR BACKEND COM TOKEN
+      // Buscar perfil do usuário via backend
+      console.log("Buscando dados do perfil...");
       const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
         method: 'GET',
         headers: {
@@ -45,6 +46,7 @@ export default function Profile() {
 
       if (!response.ok) {
         const errorText = await response.text();
+        console.error("Resposta de erro:", errorText);
         throw new Error(`Erro do servidor: ${response.status} - ${errorText}`);
       }
 
@@ -62,7 +64,8 @@ export default function Profile() {
       console.error('Erro completo:', error);
       setError(error.message);
 
-      if (error.message.includes('não autenticado') || error.message.includes('Sessão expirada')) {
+      // Se for erro de sessão, redirecionar para login
+      if (error.message.includes('não está logado') || error.message.includes('Sessão expirada')) {
         setTimeout(() => navigate('/login'), 2000);
       }
     } finally {
@@ -74,7 +77,10 @@ export default function Profile() {
     fetchUserProfile();
   }, []);
 
-  // LOGOUT CORRETO
+  const handleRefresh = () => {
+    fetchUserProfile();
+  };
+
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -88,10 +94,6 @@ export default function Profile() {
     }
   };
 
-  const handleRefresh = () => {
-    fetchUserProfile();
-  };
-
   // Funções auxiliares
   const formatDate = (dateString) => {
     if (!dateString) return 'Não informada';
@@ -102,17 +104,18 @@ export default function Profile() {
     }
   };
 
-  const formatDocument = (document, type) => {
-    if (!document) return 'Não informado';
+  const formatDocument = (doc, type) => {
+    if (!doc) return 'Não informado';
 
-    // Converte para string primeiro
-    const docString = document.toString();
+    const numbers = doc.toString().replace(/\D/g, '');
 
-    if (type === 'freelancer' && docString.length === 11) {
-      return docString.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    if (type === 'freelancer') {
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else if (type === 'empresa') {
+      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
 
-    return docString;
+    return doc;
   };
 
   // Estados de loading
@@ -124,25 +127,18 @@ export default function Profile() {
             <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
             <Link id="nomeheader" to="/">SkillMatch</Link>
           </div>
-          <div className="header-actions">
-            <button onClick={handleLogout} className="logout-btn">
-              <LogOut size={18} />
-              Sair
+          <div className="menu" id="menuLinks">
+            <button onClick={handleRefresh} className="refresh-btn">
+              <RefreshCw size={16} />
+              Recarregar
             </button>
           </div>
         </header>
-        <section className="profile-section">
-          <div className="loading-container">
-            <div className="loading-spinner-large"></div>
-            <p>Carregando seu perfil...</p>
-            <small>Autenticando e buscando dados</small>
-            <div className="loading-dots">
-              <div className="loading-dot"></div>
-              <div className="loading-dot"></div>
-              <div className="loading-dot"></div>
-            </div>
-          </div>
-        </section>
+        <div className="loading-container">
+          <div className="loading-spinner-large"></div>
+          <p>Carregando seu perfil...</p>
+          <small>Verificando sessão e dados do usuário</small>
+        </div>
       </div>
     );
   }
@@ -156,31 +152,27 @@ export default function Profile() {
             <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
             <Link id="nomeheader" to="/">SkillMatch</Link>
           </div>
-          <div className="header-actions">
-            <button onClick={handleLogout} className="logout-btn">
-              <LogOut size={18} />
-              Sair
+          <div className="menu" id="menuLinks">
+            <button onClick={handleRefresh} className="refresh-btn">
+              Tentar Novamente
             </button>
+            <Link to="/login">Fazer Login</Link>
           </div>
         </header>
-        <section className="profile-section">
-          <div className="error-container">
-            <div className="error-message">
-              <h3>Erro ao carregar perfil</h3>
-              <p>{error}</p>
-              <div className="error-actions">
-                <button onClick={handleRefresh} className="btn-submit">
-                  <RefreshCw size={18} />
-                  Tentar Novamente
-                </button>
-                <button onClick={handleLogout} className="btn-cancel">
-                  <LogOut size={18} />
-                  Fazer Logout
-                </button>
-              </div>
+        <div className="error-container">
+          <div className="error-message">
+            <h3>Erro ao carregar perfil</h3>
+            <p>{error}</p>
+            <div className="error-actions">
+              <button onClick={handleLogout} className="btn-cancel">
+                Fazer Logout
+              </button>
+              <Link to="/login" className="btn-cancel">
+                Ir para Login
+              </Link>
             </div>
           </div>
-        </section>
+        </div>
       </div>
     );
   }
@@ -188,13 +180,12 @@ export default function Profile() {
   return (
     <div className="profile">
       <header>
-        <div className="menu">
-          <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
-          <Link id="nomeheader" to="/">SkillMatch</Link>
-        </div>
-        <div className="header-actions">
+        <div className="menu-profile">
+          <div className="menu">
+            <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
+            <Link id="nomeheader" to="/">SkillMatch</Link>
+          </div>
           <button onClick={handleLogout} className="logout-btn">
-            <LogOut size={18} />
             Sair
           </button>
         </div>
@@ -205,7 +196,7 @@ export default function Profile() {
         <div className="profile-header-simple">
           <div className="avatar-container-simple">
             <div className="profile-avatar-placeholder">
-              {/* Avatar vazio para você colocar depois */}
+              {/* Avatar vazio */}
             </div>
           </div>
 
@@ -228,75 +219,71 @@ export default function Profile() {
 
         {/* Informações do Freelancer */}
         {user?.type_user === 'freelancer' && (
-          <>
-            <div className="details-container">
-              <h3 className="details-title">Informações do Freelancer</h3>
+          <div className="details-container">
+            <h3 className="details-title">Informações do Freelancer</h3>
 
-              <div className="details-grid">
+            <div className="details-grid">
+              <div className="detail-card">
+                <div className="detail-icon-wrapper">
+                  <Briefcase size={20} />
+                </div>
+                <div className="detail-content">
+                  <label>Ocupação</label>
+                  <span>{user?.ocupation_freelancer || 'Não informada'}</span>
+                </div>
+              </div>
+
+              <div className="detail-card">
+                <div className="detail-icon-wrapper">
+                  <Calendar size={20} />
+                </div>
+                <div className="detail-content">
+                  <label>Data de Nascimento</label>
+                  <span>{formatDate(user?.birthday_freelancer)}</span>
+                </div>
+              </div>
+
+              <div className="detail-card">
+                <div className="detail-icon-wrapper">
+                  <span>🔒</span>
+                </div>
+                <div className="detail-content">
+                  <label>CPF</label>
+                  <span>{formatDocument(user?.cpf_freelancer, 'freelancer')}</span>
+                </div>
+              </div>
+
+              {user?.link_portfolio_freelancer && (
                 <div className="detail-card">
                   <div className="detail-icon-wrapper">
-                    <Briefcase size={20} />
+                    <Globe size={20} />
                   </div>
                   <div className="detail-content">
-                    <label>Ocupação</label>
-                    <span>{user?.ocupation_freelancer || 'Não informada'}</span>
+                    <label>Portfólio</label>
+                    <a href={user.link_portfolio_freelancer} target="_blank" rel="noopener noreferrer">
+                      Ver Portfólio
+                    </a>
                   </div>
                 </div>
+              )}
+            </div>
+          </div>
+        )}
 
-                <div className="detail-card">
-                  <div className="detail-icon-wrapper">
-                    <Calendar size={20} />
+        {/* Habilidades do Freelancer */}
+        {user?.type_user === 'freelancer' && user?.skills && user.skills.length > 0 && (
+          <div className="details-container">
+            <h3 className="details-title">Habilidades & Competências</h3>
+            <div className="skills-container">
+              <div className="skills-grid">
+                {user.skills.map((skill, index) => (
+                  <div key={index} className="skill-badge">
+                    {skill}
                   </div>
-                  <div className="detail-content">
-                    <label>Data de Nascimento</label>
-                    <span>{formatDate(user?.birthday_freelancer)}</span>
-                  </div>
-                </div>
-
-                <div className="detail-card">
-                  <div className="detail-icon-wrapper">
-                    <span>🔒</span>
-                  </div>
-                  <div className="detail-content">
-                    <label>CPF</label>
-                    <span>{formatDocument(user?.cpf_freelancer, 'freelancer')}</span>
-                  </div>
-                </div>
-
-                {user?.link_portfolio_freelancer && (
-                  <div className="detail-card">
-                    <div className="detail-icon-wrapper">
-                      <Globe size={20} />
-                    </div>
-                    <div className="detail-content">
-                      <label>Portfólio</label>
-                      <a href={user.link_portfolio_freelancer} target="_blank" rel="noopener noreferrer">
-                        Ver Portfólio
-                      </a>
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
-
-            {/* Skills do Freelancer */}
-            {user?.skills && user.skills.length > 0 && (
-              <div className="details-container">
-                <h3 className="details-title">Habilidades</h3>
-                <div className="skills-container">
-                  <div className="skills-grid">
-                    {user.skills.map((skill, index) => (
-                      skill && skill.trim() && (
-                        <div key={index} className="skill-tag">
-                          {skill}
-                        </div>
-                      )
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
 
         {/* Informações da Empresa */}
@@ -397,14 +384,14 @@ export default function Profile() {
         {/* Botão de Edição */}
         <div className="profile-actions">
           {user?.type_user === 'empresa' && (
-            <Link to="/editarEmpresa" className="edit-profile-btn">
+            <Link to="/editar-empresa" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
             </Link>
           )}
 
           {user?.type_user === 'freelancer' && (
-            <Link to="/editar" className="edit-profile-btn">
+            <Link to="/editar-freelancer" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
             </Link>
