@@ -7,7 +7,6 @@ import { supabase } from "../lib/supabaseClient.js";
 export default function EditCompany() {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  const [user, setUser] = useState(null);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     name_user: '',
@@ -25,7 +24,7 @@ export default function EditCompany() {
 
   const navigate = useNavigate();
 
-  // CARREGAR DADOS DIRETO DO SUPABASE
+  // CARREGAR DADOS
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -36,7 +35,6 @@ export default function EditCompany() {
       setError('');
       console.log("Buscando dados da empresa via backend...");
 
-      // Verificar sessão atual
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
@@ -44,10 +42,8 @@ export default function EditCompany() {
       }
 
       console.log("Sessão ativa:", session.user.email);
-
       const token = session.access_token;
 
-      // USAR BACKEND (igual ao profile) - CORRIGIDO!
       const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
         method: 'GET',
         headers: {
@@ -65,8 +61,6 @@ export default function EditCompany() {
 
       if (result.success) {
         const user = result.user;
-
-        // Preencher formulário
         setFormData({
           name_user: user.name_user || '',
           email_user: user.email_user || '',
@@ -80,7 +74,6 @@ export default function EditCompany() {
           senha: '',
           confirmarSenha: ''
         });
-
         console.log("Formulário da empresa preenchido com sucesso!");
       } else {
         throw new Error(result.error || 'Erro ao carregar dados');
@@ -102,7 +95,7 @@ export default function EditCompany() {
     }));
   };
 
-  // ATUALIZAR DADOS DIRETO NO SUPABASE
+  // ATUALIZAR DADOS VIA BACKEND
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -115,166 +108,53 @@ export default function EditCompany() {
         return;
       }
 
-      console.log("📤 Atualizando dados da empresa no Supabase...", formData);
-
-      // Verificar sessão
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session) {
-        throw new Error("Usuário não está logado");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("Sessão expirada - faça login novamente");
       }
 
-      // Buscar ID do usuário
-      const { data: userData, error: userError } = await supabase
-        .from("user")
-        .select("id_user")
-        .eq("email_user", session.user.email)
-        .single();
+      const token = session.access_token;
 
-      if (userError) {
-        throw new Error("Erro ao identificar usuário");
-      }
-
-      const userId = userData.id_user;
-
-      // 1. Atualizar tabela USER
-      const { error: userUpdateError } = await supabase
-        .from("user")
-        .update({
-          name_user: formData.name_user,
-          phone_user: formData.phone_user,
-          city_user: formData.city_user,
-          state_user: formData.state_user,
-          linkedin_link_user: formData.linkedin_link_user,
-          insta_link_user: formData.insta_link_user,
-          bio_user: formData.bio_user
-        })
-        .eq("id_user", userId);
-
-      if (userUpdateError) {
-        throw new Error("Erro ao atualizar dados do usuário: " + userUpdateError.message);
-      }
-
-      // 2. Buscar ID da empresa - CORREÇÃO: Buscar diretamente pelo ID do usuário do Supabase
-      const { data: companyData, error: companyFetchError } = await supabase
-        .from("company")
-        .select("id_company")
-        .eq("id_user", session.user.id)  // Usar o ID diretamente do Supabase
-        .single();
-
-      let companyId = companyData?.id_company;
-
-      // 3. Atualizar/Criar empresa
-      if (companyId) {
-        // Atualizar empresa existente
-        const { error: companyUpdateError } = await supabase
-          .from("company")
-          .update({
-            cnpj_company: formData.cnpj_company
-          })
-          .eq("id_company", companyId);
-
-        if (companyUpdateError) {
-          throw new Error("Erro ao atualizar empresa: " + companyUpdateError.message);
-        }
-      } else {
-        // Criar nova empresa - CORREÇÃO: Usar session.user.id diretamente
-        const { data: newCompany, error: companyCreateError } = await supabase
-          .from("company")
-          .insert([
-            {
-              id_user: session.user.id,  // Usar ID do Supabase diretamente
-              cnpj_company: formData.cnpj_company
-            }
-          ])
-          .select()
-          .single();
-
-        if (companyCreateError) {
-          throw new Error("Erro ao criar empresa: " + companyCreateError.message);
-        }
-        companyId = newCompany.id_company;
-      }
-
-      // 4. Atualizar senha se fornecida
-      if (formData.senha) {
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: formData.senha
-        });
-
-        if (passwordError) {
-          throw new Error("Erro ao atualizar senha: " + passwordError.message);
-        }
-      }
-      const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
-        try {
-          // Validação
-          if (formData.senha && formData.senha !== formData.confirmarSenha) {
-            alert("⚠️ As senhas não coincidem!");
-            setLoading(false);
-            return;
-          }
-
-          const { data: { session } } = await supabase.auth.getSession();
-          if (!session) {
-            throw new Error("Sessão expirada - faça login novamente");
-          }
-
-          const token = session.access_token;
-
-          // Preparar dados para envio ao backend
-          const updateData = {
-            name: formData.name_user,
-            email: formData.email_user,
-            phone: formData.phone_user,
-            city: formData.city_user,
-            state: formData.state_user,
-            linkedin: formData.linkedin_link_user,
-            instagram: formData.insta_link_user,
-            bio: formData.bio_user,
-            cnpj: formData.cnpj_company?.replace(/\D/g, ''),
-            ...(formData.senha && { senha: formData.senha })
-          };
-
-          console.log("Enviando dados para atualização:", updateData);
-
-          // Usar o mesmo endpoint do backend
-          const response = await fetch('https://skill-web-backend.onrender.com/api/update-profile', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(updateData)
-          });
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Erro ao atualizar: ${response.status} - ${errorText}`);
-          }
-
-          const result = await response.json();
-          console.log("Resposta da atualização:", result);
-
-          if (result.success) {
-            alert("Perfil da empresa atualizado com sucesso!");
-            navigate('/profile');
-          } else {
-            throw new Error(result.error || 'Erro ao atualizar perfil');
-          }
-
-        } catch (error) {
-          console.error('Erro ao atualizar dados:', error);
-          alert('Erro ao atualizar dados: ' + error.message);
-        } finally {
-          setLoading(false);
-        }
+      // Preparar dados para envio ao backend
+      const updateData = {
+        name: formData.name_user,
+        email: formData.email_user,
+        phone: formData.phone_user,
+        city: formData.city_user,
+        state: formData.state_user,
+        linkedin: formData.linkedin_link_user,
+        instagram: formData.insta_link_user,
+        bio: formData.bio_user,
+        cnpj: formData.cnpj_company?.replace(/\D/g, ''),
+        ...(formData.senha && { senha: formData.senha })
       };
 
-      alert("Dados da empresa atualizados com sucesso!");
-      navigate('/profile');
+      console.log("Enviando dados para atualização:", updateData);
+
+      // Usar o endpoint do backend
+      const response = await fetch('https://skill-web-backend.onrender.com/api/update-profile', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Erro ao atualizar: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log("Resposta da atualização:", result);
+
+      if (result.success) {
+        alert("Perfil da empresa atualizado com sucesso!");
+        navigate('/profile');
+      } else {
+        throw new Error(result.error || 'Erro ao atualizar perfil');
+      }
 
     } catch (error) {
       console.error('Erro ao atualizar dados:', error);
@@ -284,7 +164,7 @@ export default function EditCompany() {
     }
   };
 
-  // Formatar CNPJ (mantido igual)
+  // Formatar CNPJ
   const formatCNPJ = (value) => {
     const numbers = value.replace(/\D/g, '');
     if (numbers.length <= 2) return numbers;
@@ -316,7 +196,7 @@ export default function EditCompany() {
           <div className="edit-header">
             <h2>EDITAR PERFIL - EMPRESA</h2>
           </div>
-
+          
           <div className="loading-container">
             <div className="loading-spinner-large"></div>
             <p>Carregando dados da empresa...</p>
@@ -343,7 +223,7 @@ export default function EditCompany() {
           <div className="edit-header">
             <h2>EDITAR PERFIL - EMPRESA</h2>
           </div>
-
+          
           <div className="error-container">
             <div className="error-message">
               <div className="error-icon">
@@ -391,72 +271,72 @@ export default function EditCompany() {
             Voltar ao Perfil
           </Link>
         </div>
-
+        
         <div className="signUp-form edit-form">
           <form onSubmit={handleSubmit}>
-
-            {/* DADOS DA EMPRESA - BLOCO 1 */}
+            
+            {/* DADOS DA EMPRESA */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">
                 <Building size={20} style={{ marginRight: '8px' }} />
                 Dados da Empresa
               </h3>
-
+              
               <div className="form-group">
                 <label htmlFor="name_user" className="form-label-edit">Razão Social *</label>
-                <input
-                  placeholder="Nome completo da sua empresa ou organização"
-                  type="text"
-                  id="name_user"
-                  name="name_user"
+                <input 
+                  placeholder="Nome completo da sua empresa ou organização" 
+                  type="text" 
+                  id="name_user" 
+                  name="name_user" 
                   value={formData.name_user}
                   onChange={handleInputChange}
-                  required
+                  required 
                   disabled={loading}
                 />
               </div>
 
               <div className="form-group">
                 <label htmlFor="email_user" className="form-label-edit">Email Corporativo *</label>
-                <input
-                  placeholder="contato@empresa.com ou comercial@empresa.com"
-                  type="email"
-                  id="email_user"
-                  name="email_user"
+                <input 
+                  placeholder="contato@empresa.com ou comercial@empresa.com" 
+                  type="email" 
+                  id="email_user" 
+                  name="email_user" 
                   value={formData.email_user}
                   onChange={handleInputChange}
-                  required
+                  required 
                   disabled={loading}
                 />
               </div>
 
               <div className="form-group">
                 <label htmlFor="cnpj_company" className="form-label-edit">CNPJ *</label>
-                <input
-                  placeholder="00.000.000/0000-00"
-                  type="text"
-                  id="cnpj_company"
-                  name="cnpj_company"
+                <input 
+                  placeholder="00.000.000/0000-00" 
+                  type="text" 
+                  id="cnpj_company" 
+                  name="cnpj_company" 
                   value={formData.cnpj_company}
                   onChange={handleCnpjChange}
                   maxLength="18"
-                  required
+                  required 
                   disabled={loading}
                 />
               </div>
             </div>
 
-            {/* CONTATO E LOCALIZAÇÃO - BLOCO 2 */}
+            {/* CONTATO E LOCALIZAÇÃO */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">📞 Contato e Localização</h3>
-
+              
               <div className="form-group">
                 <label htmlFor="phone_user" className="form-label-edit">Telefone Comercial</label>
-                <input
-                  placeholder="(11) 99999-9999"
-                  type="tel"
-                  id="phone_user"
-                  name="phone_user"
+                <input 
+                  placeholder="(11) 99999-9999" 
+                  type="tel" 
+                  id="phone_user" 
+                  name="phone_user" 
                   value={formData.phone_user}
                   onChange={handleInputChange}
                   disabled={loading}
@@ -466,11 +346,11 @@ export default function EditCompany() {
               <div className="form-row-edit">
                 <div className="form-group">
                   <label htmlFor="city_user" className="form-label-edit">Cidade</label>
-                  <input
-                    placeholder="São Paulo, Rio de Janeiro, Belo Horizonte..."
-                    type="text"
-                    id="city_user"
-                    name="city_user"
+                  <input 
+                    placeholder="São Paulo, Rio de Janeiro, Belo Horizonte..." 
+                    type="text" 
+                    id="city_user" 
+                    name="city_user" 
                     value={formData.city_user}
                     onChange={handleInputChange}
                     disabled={loading}
@@ -479,11 +359,11 @@ export default function EditCompany() {
 
                 <div className="form-group">
                   <label htmlFor="state_user" className="form-label-edit">Estado (UF)</label>
-                  <input
-                    placeholder="SP, RJ, MG, etc."
-                    type="text"
-                    id="state_user"
-                    name="state_user"
+                  <input 
+                    placeholder="SP, RJ, MG, etc." 
+                    type="text" 
+                    id="state_user" 
+                    name="state_user" 
                     value={formData.state_user}
                     onChange={handleInputChange}
                     maxLength="2"
@@ -493,17 +373,17 @@ export default function EditCompany() {
               </div>
             </div>
 
-            {/* REDES SOCIAIS - BLOCO 3 */}
+            {/* REDES SOCIAIS */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">🌐 Redes Sociais Corporativas</h3>
-
+              
               <div className="form-group">
                 <label htmlFor="linkedin_link_user" className="form-label-edit">LinkedIn da Empresa</label>
-                <input
-                  placeholder="https://linkedin.com/company/sua-empresa"
-                  type="url"
-                  id="linkedin_link_user"
-                  name="linkedin_link_user"
+                <input 
+                  placeholder="https://linkedin.com/company/sua-empresa" 
+                  type="url" 
+                  id="linkedin_link_user" 
+                  name="linkedin_link_user" 
                   value={formData.linkedin_link_user}
                   onChange={handleInputChange}
                   disabled={loading}
@@ -512,11 +392,11 @@ export default function EditCompany() {
 
               <div className="form-group">
                 <label htmlFor="insta_link_user" className="form-label-edit">Instagram da Empresa</label>
-                <input
-                  placeholder="https://instagram.com/suaempresa"
-                  type="url"
-                  id="insta_link_user"
-                  name="insta_link_user"
+                <input 
+                  placeholder="https://instagram.com/suaempresa" 
+                  type="url" 
+                  id="insta_link_user" 
+                  name="insta_link_user" 
                   value={formData.insta_link_user}
                   onChange={handleInputChange}
                   disabled={loading}
@@ -524,20 +404,20 @@ export default function EditCompany() {
               </div>
             </div>
 
-            {/* SOBRE A EMPRESA - BLOCO 4 */}
+            {/* SOBRE A EMPRESA */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">📖 Sobre a Empresa</h3>
-
+              
               <div className="form-info-edit">
                 Compartilhe informações sobre sua empresa, missão, valores, área de atuação e cultura organizacional.
               </div>
 
               <div className="form-group">
                 <label htmlFor="bio_user" className="form-label-edit">Descrição da Empresa</label>
-                <textarea
-                  placeholder="Ex: Somos uma empresa especializada em desenvolvimento de software, fundada em 2020. Nossa missão é transformar ideias em soluções digitais inovadoras. Atuamos no mercado de tecnologia com foco em aplicações web e mobile, valorizando a qualidade, inovação e satisfação dos nossos clientes..."
-                  id="bio_user"
-                  name="bio_user"
+                <textarea 
+                  placeholder="Ex: Somos uma empresa especializada em desenvolvimento de software, fundada em 2020. Nossa missão é transformar ideias em soluções digitais inovadoras. Atuamos no mercado de tecnologia com foco em aplicações web e mobile, valorizando a qualidade, inovação e satisfação dos nossos clientes..." 
+                  id="bio_user" 
+                  name="bio_user" 
                   rows="6"
                   value={formData.bio_user}
                   onChange={handleInputChange}
@@ -547,22 +427,22 @@ export default function EditCompany() {
               </div>
             </div>
 
-            {/* ALTERAÇÃO DE SENHA - BLOCO 5 */}
+            {/* ALTERAÇÃO DE SENHA */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">🔒 Alteração de Senha</h3>
               <p className="form-info-edit">
-                Preencha apenas se desejar alterar sua senha atual.
+                Preencha apenas se desejar alterar sua senha atual. 
                 Deixe os campos em branco para manter a senha atual.
               </p>
-
+              
               <div className="form-row-edit">
                 <div className="form-group">
                   <label htmlFor="senha" className="form-label-edit">Nova Senha</label>
-                  <input
-                    placeholder="Mínimo 6 caracteres"
-                    type="password"
-                    id="senha"
-                    name="senha"
+                  <input 
+                    placeholder="Mínimo 6 caracteres" 
+                    type="password" 
+                    id="senha" 
+                    name="senha" 
                     value={formData.senha}
                     onChange={handleInputChange}
                     minLength="6"
@@ -572,11 +452,11 @@ export default function EditCompany() {
 
                 <div className="form-group">
                   <label htmlFor="confirmarSenha" className="form-label-edit">Confirme a Nova Senha</label>
-                  <input
-                    placeholder="Digite a mesma senha novamente"
-                    type="password"
-                    id="confirmarSenha"
-                    name="confirmarSenha"
+                  <input 
+                    placeholder="Digite a mesma senha novamente" 
+                    type="password" 
+                    id="confirmarSenha" 
+                    name="confirmarSenha" 
                     value={formData.confirmarSenha}
                     onChange={handleInputChange}
                     minLength="6"
@@ -586,12 +466,12 @@ export default function EditCompany() {
               </div>
             </div>
 
-            {/* BOTÕES DE AÇÃO - BLOCO 6 */}
+            {/* BOTÕES DE AÇÃO */}
             <div className="form-section-edit" style={{ marginBottom: '20px' }}>
               <h3 className="section-title">Finalizar Edição</h3>
-
+              
               <div className="form-info-edit">
-                Revise todas as informações antes de salvar. Após a confirmação,
+                Revise todas as informações antes de salvar. Após a confirmação, 
                 suas alterações serão atualizadas imediatamente no perfil da empresa.
               </div>
 
@@ -606,23 +486,23 @@ export default function EditCompany() {
                     "💼 Salvar Todas as Alterações"
                   )}
                 </button>
-
+                
                 <Link to="/profile" className="btn-cancel-edit">
                   ↩️ Cancelar e Voltar
                 </Link>
               </div>
 
-              <div style={{
-                marginTop: '25px',
-                padding: '18px',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '10px',
+              <div style={{ 
+                marginTop: '25px', 
+                padding: '18px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '10px', 
                 borderLeft: '4px solid #007bff',
                 border: '1px solid #e9ecef'
               }}>
-                <p style={{
-                  margin: 0,
-                  fontSize: '0.9em',
+                <p style={{ 
+                  margin: 0, 
+                  fontSize: '0.9em', 
                   color: '#004085',
                   lineHeight: '1.5'
                 }}>
@@ -640,7 +520,7 @@ export default function EditCompany() {
   );
 }
 
-// Componente Footer (mantido igual)
+// Componente Footer
 function Footer() {
   return (
     <footer className="footer">

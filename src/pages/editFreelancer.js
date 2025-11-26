@@ -167,9 +167,6 @@ export default function EditFreelancer() {
     if (!formData.occupation.trim()) {
       throw new Error("Ocupação é obrigatória");
     }
-    if (!formData.skill_1.trim()) {
-      throw new Error("Pelo menos uma habilidade é obrigatória");
-    }
     if (formData.senha && formData.senha.length < 6) {
       throw new Error("A senha deve ter no mínimo 6 caracteres");
     }
@@ -217,7 +214,7 @@ export default function EditFreelancer() {
         // Dados do freelancer
         cpf: formData.cpf?.toString().replace(/\D/g, ''),
         birthday: formData.birthday,
-        occupation: formData.occupation, // ← frontend usa 1 "p"
+        occupation: formData.occupation,
         portfolio: formData.portfolio,
 
         // SKILLS PARA A TABELA SEPARADA
@@ -268,8 +265,6 @@ export default function EditFreelancer() {
       setLoading(false);
     }
   };
-
-  // RENDERIZAÇÃO (use o mesmo JSX que você já tem)
 
   // Tela de carregamento
   if (loadingData) {
@@ -341,6 +336,7 @@ export default function EditFreelancer() {
       </div>
     );
   }
+
   return (
     <div className="signUp">
       <header>
@@ -362,12 +358,12 @@ export default function EditFreelancer() {
         <div className="signUp-form edit-form">
           <form onSubmit={handleSubmit}>
 
-            {/* DADOS PESSOAIS - BLOCO 1 */}
+            {/* DADOS PESSOAIS */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">📝 Dados Pessoais</h3>
 
               <div className="form-group">
-                <label htmlFor="name_user" className="form-label-edit">Nome Completo *</label>
+                <label htmlFor="name" className="form-label-edit">Nome Completo *</label>
                 <input
                   placeholder="João Silva"
                   type="text"
@@ -381,7 +377,7 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="email_user" className="form-label-edit">Email *</label>
+                <label htmlFor="email" className="form-label-edit">Email *</label>
                 <input
                   placeholder="seu@email.com"
                   type="email"
@@ -396,7 +392,7 @@ export default function EditFreelancer() {
 
               <div className="form-row-edit">
                 <div className="form-group">
-                  <label htmlFor="cpf_freelancer" className="form-label-edit">CPF *</label>
+                  <label htmlFor="cpf" className="form-label-edit">CPF *</label>
                   <input
                     placeholder="000.000.000-00"
                     type="text"
@@ -411,7 +407,7 @@ export default function EditFreelancer() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="birthday_freelancer" className="form-label-edit">Data de Nascimento *</label>
+                  <label htmlFor="birthday" className="form-label-edit">Data de Nascimento *</label>
                   <input
                     type="date"
                     id="birthday"
@@ -439,12 +435,12 @@ export default function EditFreelancer() {
               </div>
             </div>
 
-            {/* CONTATO E LOCALIZAÇÃO - BLOCO 2 */}
+            {/* CONTATO E LOCALIZAÇÃO */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">📞 Contato e Localização</h3>
 
               <div className="form-group">
-                <label htmlFor="phone_user" className="form-label-edit">Telefone/WhatsApp</label>
+                <label htmlFor="phone" className="form-label-edit">Telefone/WhatsApp</label>
                 <input
                   placeholder="(11) 99999-9999"
                   type="tel"
@@ -458,7 +454,7 @@ export default function EditFreelancer() {
 
               <div className="form-row-edit">
                 <div className="form-group">
-                  <label htmlFor="city_user" className="form-label-edit">Cidade</label>
+                  <label htmlFor="city" className="form-label-edit">Cidade</label>
                   <input
                     placeholder="São Paulo, Rio de Janeiro, Belo Horizonte..."
                     type="text"
@@ -471,7 +467,7 @@ export default function EditFreelancer() {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="state_user" className="form-label-edit">Estado (UF)</label>
+                  <label htmlFor="state" className="form-label-edit">Estado (UF)</label>
                   <input
                     placeholder="SP, RJ, MG, etc."
                     type="text"
@@ -486,12 +482,12 @@ export default function EditFreelancer() {
               </div>
             </div>
 
-            {/* REDES SOCIAIS E PORTFÓLIO - BLOCO 3 */}
+            {/* REDES SOCIAIS E PORTFÓLIO */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">🌐 Redes Sociais e Portfólio</h3>
 
               <div className="form-group">
-                <label htmlFor="linkedin_link_user" className="form-label-edit">LinkedIn</label>
+                <label htmlFor="linkedin" className="form-label-edit">LinkedIn</label>
                 <input
                   placeholder="https://linkedin.com/in/seuperfil"
                   type="url"
@@ -504,20 +500,20 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="insta_link_user" className="form-label-edit">Instagram</label>
+                <label htmlFor="instagram" className="form-label-edit">Instagram</label>
                 <input
                   placeholder="https://instagram.com/seuperfil"
                   type="url"
-                  id="insta"
-                  name="insta"
-                  value={formData.insta}
+                  id="instagram"
+                  name="instagram"
+                  value={formData.instagram}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="link_portfolio_freelancer" className="form-label-edit">Link do Portfólio</label>
+                <label htmlFor="portfolio" className="form-label-edit">Link do Portfólio</label>
                 <input
                   placeholder="https://meuportfolio.com ou https://github.com/seuperfil"
                   type="url"
@@ -530,7 +526,7 @@ export default function EditFreelancer() {
               </div>
             </div>
 
-            {/* BIOGRAFIA - BLOCO 4 */}
+            {/* BIOGRAFIA */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">📖 Biografia e Apresentação</h3>
 
@@ -539,7 +535,7 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="bio_user" className="form-label-edit">Sobre você</label>
+                <label htmlFor="bio" className="form-label-edit">Sobre você</label>
                 <textarea
                   placeholder="Ex: Sou desenvolvedor front-end com 3 anos de experiência, especializado em React e TypeScript. Formado em Ciência da Computação, busco oportunidades para trabalhar em projetos desafiadores que impactem positivamente os usuários..."
                   id="bio"
@@ -553,7 +549,7 @@ export default function EditFreelancer() {
               </div>
             </div>
 
-            {/* HABILIDADES E COMPETÊNCIAS - BLOCO 5 */}
+            {/* HABILIDADES E COMPETÊNCIAS */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">💼 Habilidades & Competências</h3>
               <p className="form-info-edit">
@@ -643,7 +639,7 @@ export default function EditFreelancer() {
               </div>
             </div>
 
-            {/* ALTERAÇÃO DE SENHA - BLOCO 6 */}
+            {/* ALTERAÇÃO DE SENHA */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
               <h3 className="section-title">Alteração de Senha</h3>
               <p className="form-info-edit">
@@ -682,7 +678,7 @@ export default function EditFreelancer() {
               </div>
             </div>
 
-            {/* BOTÕES DE AÇÃO - BLOCO 7 */}
+            {/* BOTÕES DE AÇÃO */}
             <div className="form-section-edit" style={{ marginBottom: '20px' }}>
               <h3 className="section-title">Finalizar Edição</h3>
 
@@ -737,7 +733,7 @@ export default function EditFreelancer() {
   );
 }
 
-// Componente Footer (mantido igual)
+// Componente Footer
 function Footer() {
   return (
     <footer className="footer">
@@ -776,4 +772,3 @@ function Footer() {
     </footer>
   );
 }
-
