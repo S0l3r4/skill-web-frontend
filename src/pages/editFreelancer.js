@@ -422,9 +422,9 @@ export default function EditFreelancer() {
                 <input
                   placeholder="Ex: Desenvolvedor Front-end, Designer UX, Marketing Digital"
                   type="text"
-                  id="occupation_freelancer"
-                  name="occupation_freelancer"
-                  value={formData.occupation_freelancer}
+                  id="ocuppation_freelancer"
+                  name="ocuppation_freelancer"
+                  value={formData.ocuppation_freelancer}
                   onChange={handleInputChange}
                   required
                   disabled={submitting}
