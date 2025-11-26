@@ -240,16 +240,12 @@ const fetchUserData = async () => {
         // CORREÇÃO FINAL: enviar como 'ocupation' (1 'p') para o backend
         occupation: formData.ocupation_freelancer ? String(formData.ocupation_freelancer).trim() : null,
         portfolio: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : null,
-
-        // Skills
-        skills: [
-          formData.skill_1,
-          formData.skill_2,
-          formData.skill_3,
-          formData.skill_4,
-          formData.skill_5,
-          formData.skill_6
-        ].filter(skill => skill && skill.trim() !== '')
+        skill_1: formData.skill_1 ? formData.skill_1.trim() : null,
+        skill_2: formData.skill_2 ? formData.skill_2.trim() : null,
+        skill_3: formData.skill_3 ? formData.skill_3.trim() : null,
+        skill_4: formData.skill_4 ? formData.skill_4.trim() : null,
+        skill_5: formData.skill_5 ? formData.skill_5.trim() : null,
+        skill_6: formData.skill_6 ? formData.skill_6.trim() : null,
       };
 
       // Adicionar senha apenas se fornecida
