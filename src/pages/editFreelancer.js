@@ -6,10 +6,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient.js";
 
 export default function EditFreelancer() {
-  const [loadingData, setLoadingData] = useState(true);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const [loadingData, setLoadingData] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   const [formData, setFormData] = useState({
     // Dados básicos
@@ -21,13 +21,13 @@ export default function EditFreelancer() {
     linkedin_link_user: '',
     insta_link_user: '',
     bio_user: '',
-    
+
     // Dados específicos do freelancer
     cpf_freelancer: '',
     birthday_freelancer: '',
     occupation_freelancer: '',
     link_portfolio_freelancer: '',
-    
+
     // Senha
     senha: '',
     confirmarSenha: ''
@@ -57,6 +57,9 @@ export default function EditFreelancer() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Sessão expirada. Por favor, faça login novamente.");
+        }
         throw new Error(`Erro ao buscar dados: ${response.status}`);
       }
 
@@ -65,8 +68,8 @@ export default function EditFreelancer() {
 
       if (result.success) {
         const user = result.user;
-        
-        // Preencher formulário com tratamento seguro
+
+        // Preencher formulário com tratamento seguro para null/undefined
         setFormData({
           name_user: user.name_user || '',
           email_user: user.email_user || '',
@@ -77,8 +80,8 @@ export default function EditFreelancer() {
           insta_link_user: user.insta_link_user || '',
           bio_user: user.bio_user || '',
           cpf_freelancer: user.cpf_freelancer || '',
-          birthday_freelancer: user.birthday_freelancer || '',
-          occupation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
+          birthday_freelancer: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '', // Formatar data para input date
+          occupation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '', // Tentar variações de nome
           link_portfolio_freelancer: user.link_portfolio_freelancer || '',
           senha: '',
           confirmarSenha: ''
@@ -86,12 +89,15 @@ export default function EditFreelancer() {
 
         console.log("✅ Dados carregados com sucesso!");
       } else {
-        throw new Error(result.error || 'Erro ao carregar dados');
+        throw new Error(result.error || 'Erro ao carregar dados do perfil');
       }
 
     } catch (error) {
       console.error('❌ Erro ao buscar dados:', error);
       setError(error.message);
+      if (error.message.includes("não autenticado") || error.message.includes("Sessão expirada")) {
+        setTimeout(() => navigate('/login'), 2000);
+      }
     } finally {
       setLoadingData(false);
     }
@@ -115,13 +121,9 @@ export default function EditFreelancer() {
     let value = e.target.value.replace(/\D/g, '');
 
     if (value.length <= 11) {
-      if (value.length > 9) {
-        value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-      } else if (value.length > 6) {
-        value = value.replace(/(\d{3})(\d{3})(\d{3})/, '$1.$2.$3');
-      } else if (value.length > 3) {
-        value = value.replace(/(\d{3})(\d{3})/, '$1.$2');
-      }
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    } else {
+      value = value.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
     }
 
     setFormData(prev => ({
@@ -130,23 +132,25 @@ export default function EditFreelancer() {
     }));
   };
 
-  // ENVIAR DADOS PARA ATUALIZAÇÃO - VERSÃO SIMPLIFICADA
+  // ENVIAR DADOS PARA ATUALIZAÇÃO
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
 
     try {
       console.log("🔄 Iniciando atualização...");
 
       // Validações básicas
-      if (!formData.name_user?.trim()) {
-        throw new Error("Nome completo é obrigatório");
-      }
-      if (!formData.email_user?.trim()) {
-        throw new Error("Email é obrigatório");
-      }
-      if (formData.senha && formData.senha !== formData.confirmarSenha) {
-        throw new Error("As senhas não coincidem");
+      if (!formData.name_user?.trim()) throw new Error("Nome completo é obrigatório");
+      if (!formData.email_user?.trim()) throw new Error("Email é obrigatório");
+
+      if (formData.senha || formData.confirmarSenha) {
+        if (formData.senha !== formData.confirmarSenha) {
+          throw new Error("As senhas não coincidem");
+        }
+        if (formData.senha.length < 6) {
+          throw new Error("A senha deve ter no mínimo 6 caracteres");
+        }
       }
 
       const { data: { session } } = await supabase.auth.getSession();
@@ -157,27 +161,28 @@ export default function EditFreelancer() {
       const token = session.access_token;
 
       // PREPARAR DADOS DE FORMA SEGURA
+      // Enviar null se o campo estiver vazio para limpar no banco, ou o valor se existir
       const updateData = {
         // Dados da tabela USER
-        name: String(formData.name_user || ''),
-        email: String(formData.email_user || ''),
-        phone: String(formData.phone_user || ''),
-        city: String(formData.city_user || ''),
-        state: String(formData.state_user || ''),
-        linkedin: String(formData.linkedin_link_user || ''),
-        instagram: String(formData.insta_link_user || ''),
-        bio: String(formData.bio_user || ''),
-        
+        name: formData.name_user.trim(),
+        email: formData.email_user.trim(),
+        phone: formData.phone_user.trim() || null,
+        city: formData.city_user.trim() || null,
+        state: formData.state_user.trim() || null,
+        linkedin: formData.linkedin_link_user.trim() || null,
+        instagram: formData.insta_link_user.trim() || null,
+        bio: formData.bio_user.trim() || null,
+
         // Dados da tabela FREELANCER
-        cpf: formData.cpf_freelancer ? String(formData.cpf_freelancer).replace(/\D/g, '') : null,
+        cpf: formData.cpf_freelancer ? formData.cpf_freelancer.replace(/\D/g, '') : null,
         birthday: formData.birthday_freelancer || null,
-        occupation: formData.occupation_freelancer || null,
-        portfolio: formData.link_portfolio_freelancer || null
+        occupation: formData.occupation_freelancer?.trim() || null,
+        portfolio: formData.link_portfolio_freelancer?.trim() || null
       };
 
       // Adicionar senha apenas se fornecida
       if (formData.senha && formData.senha.trim()) {
-        updateData.senha = String(formData.senha);
+        updateData.senha = formData.senha;
       }
 
       console.log("📤 Dados preparados para envio:", updateData);
@@ -197,7 +202,7 @@ export default function EditFreelancer() {
       if (!response.ok) {
         const errorText = await response.text();
         console.error("❌ Erro na resposta:", errorText);
-        throw new Error(`Erro do servidor: ${response.status}`);
+        throw new Error(`Erro ao atualizar perfil: ${errorText || response.statusText}`);
       }
 
       const result = await response.json();
@@ -212,10 +217,9 @@ export default function EditFreelancer() {
 
     } catch (error) {
       console.error('❌ Erro completo:', error);
-      setError(error.message);
       alert('Erro ao atualizar: ' + error.message);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
@@ -325,7 +329,7 @@ export default function EditFreelancer() {
                   value={formData.name_user}
                   onChange={handleInputChange}
                   required
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
 
@@ -339,7 +343,7 @@ export default function EditFreelancer() {
                   value={formData.email_user}
                   onChange={handleInputChange}
                   required
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
 
@@ -354,7 +358,7 @@ export default function EditFreelancer() {
                     value={formData.cpf_freelancer}
                     onChange={handleCpfChange}
                     maxLength="14"
-                    disabled={loading}
+                    disabled={submitting}
                   />
                 </div>
 
@@ -366,7 +370,7 @@ export default function EditFreelancer() {
                     name="birthday_freelancer"
                     value={formData.birthday_freelancer}
                     onChange={handleInputChange}
-                    disabled={loading}
+                    disabled={submitting}
                   />
                 </div>
               </div>
@@ -380,7 +384,7 @@ export default function EditFreelancer() {
                   name="occupation_freelancer"
                   value={formData.occupation_freelancer}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
             </div>
@@ -398,7 +402,7 @@ export default function EditFreelancer() {
                   name="phone_user"
                   value={formData.phone_user}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
 
@@ -412,7 +416,7 @@ export default function EditFreelancer() {
                     name="city_user"
                     value={formData.city_user}
                     onChange={handleInputChange}
-                    disabled={loading}
+                    disabled={submitting}
                   />
                 </div>
 
@@ -426,7 +430,7 @@ export default function EditFreelancer() {
                     value={formData.state_user}
                     onChange={handleInputChange}
                     maxLength="2"
-                    disabled={loading}
+                    disabled={submitting}
                   />
                 </div>
               </div>
@@ -445,7 +449,7 @@ export default function EditFreelancer() {
                   name="linkedin_link_user"
                   value={formData.linkedin_link_user}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
 
@@ -458,7 +462,7 @@ export default function EditFreelancer() {
                   name="insta_link_user"
                   value={formData.insta_link_user}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
 
@@ -471,7 +475,7 @@ export default function EditFreelancer() {
                   name="link_portfolio_freelancer"
                   value={formData.link_portfolio_freelancer}
                   onChange={handleInputChange}
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
             </div>
@@ -494,7 +498,7 @@ export default function EditFreelancer() {
                   value={formData.bio_user}
                   onChange={handleInputChange}
                   className="form-textarea"
-                  disabled={loading}
+                  disabled={submitting}
                 />
               </div>
             </div>
@@ -518,7 +522,7 @@ export default function EditFreelancer() {
                     value={formData.senha}
                     onChange={handleInputChange}
                     minLength="6"
-                    disabled={loading}
+                    disabled={submitting}
                   />
                 </div>
 
@@ -532,7 +536,7 @@ export default function EditFreelancer() {
                     value={formData.confirmarSenha}
                     onChange={handleInputChange}
                     minLength="6"
-                    disabled={loading}
+                    disabled={submitting}
                   />
                 </div>
               </div>
@@ -548,8 +552,8 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-actions-edit">
-                <button type="submit" className="btnsubmit btn-edit" disabled={loading}>
-                  {loading ? (
+                <button type="submit" className="btnsubmit btn-edit" disabled={submitting}>
+                  {submitting ? (
                     <>
                       <div className="spinner"></div>
                       Atualizando Perfil...
