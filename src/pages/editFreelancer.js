@@ -81,7 +81,7 @@ export default function EditFreelancer() {
           bio_user: user.bio_user || '',
           cpf_freelancer: user.cpf_freelancer || '',
           birthday_freelancer: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '',
-          occupation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
+          ocuppation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
           link_portfolio_freelancer: user.link_portfolio_freelancer || '',
           senha: '',
           confirmarSenha: ''
@@ -216,7 +216,7 @@ export default function EditFreelancer() {
         // Dados da tabela FREELANCER - CORREÇÃO: garantir que cpf seja string antes de processar
         cpf: formData.cpf_freelancer ? String(formData.cpf_freelancer).replace(/\D/g, '') : null,
         birthday: formData.birthday_freelancer || null,
-        occupation: formData.occupation_freelancer ? formData.occupation_freelancer.trim() : null,
+        occupation: formData.ocuppation_freelancer ? formData.ocuppation_freelancer.trim() : null,
         portfolio: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : null
       };
 
