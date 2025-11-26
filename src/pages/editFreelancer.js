@@ -22,11 +22,19 @@ export default function EditFreelancer() {
     insta_link_user: '',
     bio_user: '',
 
-    // Dados específicos do freelancer
+    // Dados específicos do freelancer - CORRIGIDO: usar ocuppation_freelancer
     cpf_freelancer: '',
     birthday_freelancer: '',
-    occupation_freelancer: '',
+    ocuppation_freelancer: '', // NOME CORRETO DO CAMPO NO BANCO
     link_portfolio_freelancer: '',
+
+    // Skills
+    skill_1: '',
+    skill_2: '',
+    skill_3: '',
+    skill_4: '',
+    skill_5: '',
+    skill_6: '',
 
     // Senha
     senha: '',
@@ -81,13 +89,22 @@ export default function EditFreelancer() {
           bio_user: user.bio_user || '',
           cpf_freelancer: user.cpf_freelancer || '',
           birthday_freelancer: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '',
-          ocuppation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
+          // CORREÇÃO: usar o nome exato do campo do banco
+          ocuppation_freelancer: user.ocuppation_freelancer || '',
           link_portfolio_freelancer: user.link_portfolio_freelancer || '',
+          // Skills - inicializar vazias
+          skill_1: '',
+          skill_2: '',
+          skill_3: '',
+          skill_4: '',
+          skill_5: '',
+          skill_6: '',
           senha: '',
           confirmarSenha: ''
         });
 
         console.log("Dados carregados com sucesso!");
+        console.log("Ocupação carregada:", user.ocuppation_freelancer);
       } else {
         throw new Error(result.error || 'Erro ao carregar dados do perfil');
       }
@@ -116,7 +133,7 @@ export default function EditFreelancer() {
     }));
   };
 
-  // FORMATAR CPF - CORREÇÃO DO ERRO u.cpf.trim is not a function
+  // FORMATAR CPF
   const handleCpfChange = (e) => {
     let value = e.target.value.replace(/\D/g, '');
 
@@ -132,7 +149,7 @@ export default function EditFreelancer() {
     }));
   };
 
-  // VALIDAR FORMULÁRIO - CORREÇÃO DO ERRO u.cpf.trim is not a function
+  // VALIDAR FORMULÁRIO - CORREÇÃO: usar ocuppation_freelancer
   const validateForm = () => {
     const errors = [];
 
@@ -164,7 +181,8 @@ export default function EditFreelancer() {
       }
     }
 
-    if (!formData.occupation_freelancer || !formData.occupation_freelancer.trim()) {
+    // CORREÇÃO: usar ocuppation_freelancer (nome correto do campo)
+    if (!formData.ocuppation_freelancer || !formData.ocuppation_freelancer.toString().trim()) {
       errors.push("Ocupação é obrigatória");
     }
 
@@ -180,13 +198,14 @@ export default function EditFreelancer() {
     return errors;
   };
 
-  // ENVIAR DADOS PARA ATUALIZAÇÃO - CORREÇÃO DO ERRO u.cpf.trim is not a function
+  // ENVIAR DADOS PARA ATUALIZAÇÃO - CORREÇÃO: usar ocuppation_freelancer
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
       console.log("Iniciando atualização...");
+      console.log("Dados do formulário:", formData);
 
       // Validar formulário
       const validationErrors = validateForm();
@@ -201,7 +220,7 @@ export default function EditFreelancer() {
 
       const token = session.access_token;
 
-      // PREPARAR DADOS DE FORMA SEGURA - CORREÇÃO DO ERRO u.cpf.trim is not a function
+      // PREPARAR DADOS DE FORMA SEGURA - CORREÇÃO: usar occupation (sem o 'p' extra) para o backend
       const updateData = {
         // Dados da tabela USER
         name: formData.name_user.trim(),
@@ -213,11 +232,22 @@ export default function EditFreelancer() {
         instagram: formData.insta_link_user ? formData.insta_link_user.trim() : null,
         bio: formData.bio_user ? formData.bio_user.trim() : null,
 
-        // Dados da tabela FREELANCER - CORREÇÃO: garantir que cpf seja string antes de processar
+        // Dados da tabela FREELANCER
         cpf: formData.cpf_freelancer ? String(formData.cpf_freelancer).replace(/\D/g, '') : null,
         birthday: formData.birthday_freelancer || null,
-        occupation: formData.ocuppation_freelancer ? formData.ocuppation_freelancer.trim() : null,
-        portfolio: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : null
+        // CORREÇÃO: enviar como 'occupation' (sem o 'p' extra) para o backend processar
+        occupation: formData.ocuppation_freelancer ? String(formData.ocuppation_freelancer).trim() : null,
+        portfolio: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : null,
+
+        // Skills
+        skills: [
+          formData.skill_1,
+          formData.skill_2,
+          formData.skill_3,
+          formData.skill_4,
+          formData.skill_5,
+          formData.skill_6
+        ].filter(skill => skill && skill.trim() !== '')
       };
 
       // Adicionar senha apenas se fornecida
@@ -418,7 +448,7 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="occupation_freelancer" className="form-label-edit">Ocupação/Profissão *</label>
+                <label htmlFor="ocuppation_freelancer" className="form-label-edit">Ocupação/Profissão *</label>
                 <input
                   placeholder="Ex: Desenvolvedor Front-end, Designer UX, Marketing Digital"
                   type="text"
@@ -458,7 +488,7 @@ export default function EditFreelancer() {
                     id="city_user"
                     name="city_user"
                     value={formData.city_user}
-                  onChange={handleInputChange}
+                    onChange={handleInputChange}
                     disabled={submitting}
                   />
                 </div>
@@ -520,6 +550,95 @@ export default function EditFreelancer() {
                   onChange={handleInputChange}
                   disabled={submitting}
                 />
+              </div>
+            </div>
+
+            {/* HABILIDADES */}
+            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
+              <h3 className="section-title">Habilidades e Competências</h3>
+
+              <div className="form-info-edit">
+                Adicione suas principais habilidades (tecnologias, ferramentas, soft skills).
+              </div>
+
+              <div className="skills-input-grid">
+                <div className="form-group">
+                  <label htmlFor="skill_1" className="form-label-edit">Habilidade 1</label>
+                  <input
+                    placeholder="Ex: JavaScript, React, TypeScript"
+                    type="text"
+                    id="skill_1"
+                    name="skill_1"
+                    value={formData.skill_1}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="skill_2" className="form-label-edit">Habilidade 2</label>
+                  <input
+                    placeholder="Ex: Node.js, Python, PHP"
+                    type="text"
+                    id="skill_2"
+                    name="skill_2"
+                    value={formData.skill_2}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="skill_3" className="form-label-edit">Habilidade 3</label>
+                  <input
+                    placeholder="Ex: UI/UX Design, Figma, Adobe XD"
+                    type="text"
+                    id="skill_3"
+                    name="skill_3"
+                    value={formData.skill_3}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="skill_4" className="form-label-edit">Habilidade 4</label>
+                  <input
+                    placeholder="Ex: Git, Docker, AWS"
+                    type="text"
+                    id="skill_4"
+                    name="skill_4"
+                    value={formData.skill_4}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="skill_5" className="form-label-edit">Habilidade 5</label>
+                  <input
+                    placeholder="Ex: Comunicação, Liderança, Scrum"
+                    type="text"
+                    id="skill_5"
+                    name="skill_5"
+                    value={formData.skill_5}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="skill_6" className="form-label-edit">Habilidade 6</label>
+                  <input
+                    placeholder="Ex: Inglês, Espanhol, Alemão"
+                    type="text"
+                    id="skill_6"
+                    name="skill_6"
+                    value={formData.skill_6}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  />
+                </div>
               </div>
             </div>
 
