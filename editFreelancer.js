@@ -40,9 +40,7 @@ export default function EditFreelancer() {
     senha: '',
     confirmarSenha: ''
   });
-
-  // BUSCAR DADOS DO USUÁRIO
-  // BUSCAR DADOS DO USUÁRIO - ATUALIZADA PARA CARREGAR SKILLS
+// BUSCAR DADOS DO USUÁRIO - ATUALIZADA PARA CARREGAR SKILLS
 const fetchUserData = async () => {
   try {
     setLoadingData(true);
@@ -73,14 +71,15 @@ const fetchUserData = async () => {
     }
 
     const result = await response.json();
-    console.log("Dados recebidos do backend:", result);
+    console.log("🎯 Dados COMPLETOS recebidos do backend:", result);
 
     if (result.success) {
       const user = result.user;
 
       // ✅ CARREGAR SKILLS EXISTENTES
       const existingSkills = user.skills || [];
-      console.log("Skills existentes:", existingSkills);
+      console.log("🔍 Skills existentes encontradas:", existingSkills);
+      console.log("🔍 Número de skills:", existingSkills.length);
 
       // Preencher formulário com tratamento seguro para null/undefined
       setFormData({
@@ -96,7 +95,7 @@ const fetchUserData = async () => {
         birthday_freelancer: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '',
         ocupation_freelancer: user.ocupation_freelancer || user.ocuppation_freelancer || '',
         link_portfolio_freelancer: user.link_portfolio_freelancer || '',
-        // PREENCHER SKILLS EXISTENTES
+        // ✅ PREENCHER SKILLS EXISTENTES
         skill_1: existingSkills[0] || '',
         skill_2: existingSkills[1] || '',
         skill_3: existingSkills[2] || '',
@@ -107,7 +106,7 @@ const fetchUserData = async () => {
         confirmarSenha: ''
       });
 
-      console.log("Dados carregados com sucesso! Skills:", existingSkills);
+      console.log("✅ Dados carregados com sucesso! Skills:", existingSkills);
     } else {
       throw new Error(result.error || 'Erro ao carregar dados do perfil');
     }
