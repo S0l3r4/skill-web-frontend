@@ -22,10 +22,10 @@ export default function EditFreelancer() {
     insta_link_user: '',
     bio_user: '',
 
-    // Dados específicos do freelancer - CORRIGIDO: usar ocuppation_freelancer
+    // Dados específicos do freelancer - CORREÇÃO FINAL: usar ocupation_freelancer (1 'p')
     cpf_freelancer: '',
     birthday_freelancer: '',
-    ocuppation_freelancer: '', // NOME CORRETO DO CAMPO NO BANCO
+    ocupation_freelancer: '', // NOME CORRETO: 1 'p' apenas
     link_portfolio_freelancer: '',
 
     // Skills
@@ -89,8 +89,8 @@ export default function EditFreelancer() {
           bio_user: user.bio_user || '',
           cpf_freelancer: user.cpf_freelancer || '',
           birthday_freelancer: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '',
-          // CORREÇÃO: usar o nome exato do campo do banco
-          ocuppation_freelancer: user.ocuppation_freelancer || '',
+          // CORREÇÃO FINAL: usar ocupation_freelancer (1 'p')
+          ocupation_freelancer: user.ocupation_freelancer || user.ocuppation_freelancer || '',
           link_portfolio_freelancer: user.link_portfolio_freelancer || '',
           // Skills - inicializar vazias
           skill_1: '',
@@ -104,7 +104,7 @@ export default function EditFreelancer() {
         });
 
         console.log("Dados carregados com sucesso!");
-        console.log("Ocupação carregada:", user.ocuppation_freelancer);
+        console.log("Ocupação carregada:", user.ocupation_freelancer || user.ocuppation_freelancer);
       } else {
         throw new Error(result.error || 'Erro ao carregar dados do perfil');
       }
@@ -149,7 +149,7 @@ export default function EditFreelancer() {
     }));
   };
 
-  // VALIDAR FORMULÁRIO - CORREÇÃO: usar ocuppation_freelancer
+  // VALIDAR FORMULÁRIO - CORREÇÃO FINAL: usar ocupation_freelancer (1 'p')
   const validateForm = () => {
     const errors = [];
 
@@ -181,8 +181,8 @@ export default function EditFreelancer() {
       }
     }
 
-    // CORREÇÃO: usar ocuppation_freelancer (nome correto do campo)
-    if (!formData.ocuppation_freelancer || !formData.ocuppation_freelancer.toString().trim()) {
+    // CORREÇÃO FINAL: usar ocupation_freelancer (1 'p')
+    if (!formData.ocupation_freelancer || !formData.ocupation_freelancer.toString().trim()) {
       errors.push("Ocupação é obrigatória");
     }
 
@@ -198,7 +198,7 @@ export default function EditFreelancer() {
     return errors;
   };
 
-  // ENVIAR DADOS PARA ATUALIZAÇÃO - CORREÇÃO: usar ocuppation_freelancer
+  // ENVIAR DADOS PARA ATUALIZAÇÃO - CORREÇÃO FINAL: usar ocupation_freelancer (1 'p')
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -220,7 +220,7 @@ export default function EditFreelancer() {
 
       const token = session.access_token;
 
-      // PREPARAR DADOS DE FORMA SEGURA - CORREÇÃO: usar occupation (sem o 'p' extra) para o backend
+      // PREPARAR DADOS DE FORMA SEGURA - CORREÇÃO FINAL: usar ocupation_freelancer (1 'p')
       const updateData = {
         // Dados da tabela USER
         name: formData.name_user.trim(),
@@ -235,8 +235,8 @@ export default function EditFreelancer() {
         // Dados da tabela FREELANCER
         cpf: formData.cpf_freelancer ? String(formData.cpf_freelancer).replace(/\D/g, '') : null,
         birthday: formData.birthday_freelancer || null,
-        // CORREÇÃO: enviar como 'occupation' (sem o 'p' extra) para o backend processar
-        occupation: formData.ocuppation_freelancer ? String(formData.ocuppation_freelancer).trim() : null,
+        // CORREÇÃO FINAL: enviar como 'ocupation' (1 'p') para o backend
+        occupation: formData.ocupation_freelancer ? String(formData.ocupation_freelancer).trim() : null,
         portfolio: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : null,
 
         // Skills
@@ -448,13 +448,13 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="ocuppation_freelancer" className="form-label-edit">Ocupação/Profissão *</label>
+                <label htmlFor="ocupation_freelancer" className="form-label-edit">Ocupação/Profissão *</label>
                 <input
                   placeholder="Ex: Desenvolvedor Front-end, Designer UX, Marketing Digital"
                   type="text"
-                  id="ocuppation_freelancer"
-                  name="ocuppation_freelancer"
-                  value={formData.ocuppation_freelancer}
+                  id="ocupation_freelancer"
+                  name="ocupation_freelancer"
+                  value={formData.ocupation_freelancer}
                   onChange={handleInputChange}
                   required
                   disabled={submitting}
