@@ -13,24 +13,24 @@ export default function EditFreelancer() {
 
   const [formData, setFormData] = useState({
     // Dados Pessoais
-    name: '',
-    email: '',
-    cpf: '',
-    birthday: '',
-    occupation: '',
+    name_user: '',
+    email_user: '',
+    cpf_freelancer: '',
+    birthday_freelancer: '',
+    occupation_freelancer: '',
 
     // Contato e Localização
-    phone: '',
-    city: '',
-    state: '',
+    phone_user: '',
+    city_user: '',
+    state_user: '',
 
     // Redes Sociais e Portfólio
-    linkedin: '',
-    instagram: '',
-    portfolio: '',
+    linkedin_link_user: '',
+    insta_link_user: '',
+    link_portfolio_freelancer: '',
 
     // Biografia
-    bio: '',
+    bio_user: '',
 
     // Habilidades
     skill_1: '',
@@ -50,7 +50,7 @@ export default function EditFreelancer() {
     try {
       setLoadingData(true);
       setError('');
-      console.log("Buscando dados do usuário...");
+      console.log("🔄 Buscando dados do freelancer...");
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
@@ -74,26 +74,26 @@ export default function EditFreelancer() {
       }
 
       const result = await response.json();
-      console.log("Dados recebidos:", result);
+      console.log("📦 Dados recebidos do backend:", result);
 
       if (result.success) {
         const user = result.user;
 
         // Preencher formulário com dados do usuário
         setFormData({
-          name: user.name_user || '',
-          email: user.email_user || '',
-          cpf: user.cpf_freelancer || '',
-          birthday: user.birthday_freelancer || '',
-          occupation: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
-          phone: user.phone_user || '',
-          city: user.city_user || '',
-          state: user.state_user || '',
-          linkedin: user.linkedin_link_user || '',
-          instagram: user.insta_link_user || '',
-          portfolio: user.link_portfolio_freelancer || '',
-          bio: user.bio_user || '',
-          // Habilidades (você precisará adaptar conforme sua estrutura)
+          name_user: user.name_user || '',
+          email_user: user.email_user || '',
+          cpf_freelancer: user.cpf_freelancer || '',
+          birthday_freelancer: user.birthday_freelancer || '',
+          occupation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
+          phone_user: user.phone_user || '',
+          city_user: user.city_user || '',
+          state_user: user.state_user || '',
+          linkedin_link_user: user.linkedin_link_user || '',
+          insta_link_user: user.insta_link_user || '',
+          link_portfolio_freelancer: user.link_portfolio_freelancer || '',
+          bio_user: user.bio_user || '',
+          // Habilidades
           skill_1: '',
           skill_2: '',
           skill_3: '',
@@ -104,13 +104,13 @@ export default function EditFreelancer() {
           confirmarSenha: ''
         });
 
-        console.log("Dados carregados com sucesso!");
+        console.log("✅ Dados carregados com sucesso!");
       } else {
         throw new Error(result.error || 'Erro ao carregar dados');
       }
 
     } catch (error) {
-      console.error('Erro ao buscar dados:', error);
+      console.error('❌ Erro ao buscar dados:', error);
       setError(error.message);
     } finally {
       setLoadingData(false);
@@ -146,38 +146,29 @@ export default function EditFreelancer() {
 
     setFormData(prev => ({
       ...prev,
-      cpf: value
+      cpf_freelancer: value
     }));
   };
 
-  // VALIDAR FORMULÁRIO
+  // VALIDAR FORMULÁRIO (mais flexível)
   const validateForm = () => {
-    if (!formData.name.trim()) {
+    if (!formData.name_user?.trim()) {
       throw new Error("Nome completo é obrigatório");
     }
-    if (!formData.email.trim()) {
+    if (!formData.email_user?.trim()) {
       throw new Error("Email é obrigatório");
     }
-    if (!formData.cpf.toString().trim()) {
-      throw new Error("CPF é obrigatório");
+    
+    // CPF não é mais obrigatório para edição
+    if (formData.cpf_freelancer && formData.cpf_freelancer.replace(/\D/g, '').length !== 11) {
+      throw new Error("CPF deve ter 11 dígitos");
     }
-    if (!formData.birthday) {
-      throw new Error("Data de nascimento é obrigatória");
-    }
-    if (!formData.occupation.trim()) {
-      throw new Error("Ocupação é obrigatória");
-    }
+    
     if (formData.senha && formData.senha.length < 6) {
       throw new Error("A senha deve ter no mínimo 6 caracteres");
     }
     if (formData.senha !== formData.confirmarSenha) {
       throw new Error("As senhas não coincidem");
-    }
-
-    // Validar CPF (formato básico)
-    const cpfNumbers = formData.cpf.toString().replace(/\D/g, '');
-    if (cpfNumbers.length !== 11) {
-      throw new Error("CPF deve ter 11 dígitos");
     }
   };
 
@@ -199,39 +190,29 @@ export default function EditFreelancer() {
 
       const token = session.access_token;
 
-      // Preparar dados para envio
+      // Preparar dados para envio - USANDO OS NOMES CORRETOS DO BANCO
       const updateData = {
-        // Dados básicos
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        city: formData.city,
-        state: formData.state,
-        linkedin: formData.linkedin,
-        instagram: formData.instagram,
-        bio: formData.bio,
+        // Dados básicos da tabela USER
+        name: formData.name_user,
+        email: formData.email_user,
+        phone: formData.phone_user,
+        city: formData.city_user,
+        state: formData.state_user,
+        linkedin: formData.linkedin_link_user,
+        instagram: formData.insta_link_user,
+        bio: formData.bio_user,
 
-        // Dados do freelancer
-        cpf: formData.cpf?.toString().replace(/\D/g, ''),
-        birthday: formData.birthday,
-        occupation: formData.occupation,
-        portfolio: formData.portfolio,
-
-        // SKILLS PARA A TABELA SEPARADA
-        skills: [
-          formData.skill_1,
-          formData.skill_2,
-          formData.skill_3,
-          formData.skill_4,
-          formData.skill_5,
-          formData.skill_6
-        ].filter(skill => skill.trim() !== ''),
+        // Dados específicos do FREELANCER
+        cpf: formData.cpf_freelancer?.replace(/\D/g, ''),
+        birthday: formData.birthday_freelancer,
+        occupation: formData.occupation_freelancer,
+        portfolio: formData.link_portfolio_freelancer,
 
         // Senha
         ...(formData.senha && { senha: formData.senha })
       };
 
-      console.log("Enviando dados para atualização:", updateData);
+      console.log("📤 Enviando dados para atualização:", updateData);
 
       // Chamar backend para atualizar
       const response = await fetch('https://skill-web-backend.onrender.com/api/update-profile', {
@@ -249,18 +230,19 @@ export default function EditFreelancer() {
       }
 
       const result = await response.json();
-      console.log("Resposta da atualização:", result);
+      console.log("📨 Resposta da atualização:", result);
 
       if (result.success) {
-        alert("Perfil atualizado com sucesso!");
+        alert("🎉 Perfil atualizado com sucesso!");
         navigate('/profile');
       } else {
         throw new Error(result.error || 'Erro ao atualizar perfil');
       }
 
     } catch (error) {
-      console.error('Erro ao atualizar:', error);
+      console.error('❌ Erro ao atualizar:', error);
       setError(error.message);
+      alert('Erro ao atualizar: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -363,13 +345,13 @@ export default function EditFreelancer() {
               <h3 className="section-title">📝 Dados Pessoais</h3>
 
               <div className="form-group">
-                <label htmlFor="name" className="form-label-edit">Nome Completo *</label>
+                <label htmlFor="name_user" className="form-label-edit">Nome Completo *</label>
                 <input
                   placeholder="João Silva"
                   type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
+                  id="name_user"
+                  name="name_user"
+                  value={formData.name_user}
                   onChange={handleInputChange}
                   required
                   disabled={loading}
@@ -377,13 +359,13 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="email" className="form-label-edit">Email *</label>
+                <label htmlFor="email_user" className="form-label-edit">Email *</label>
                 <input
                   placeholder="seu@email.com"
                   type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
+                  id="email_user"
+                  name="email_user"
+                  value={formData.email_user}
                   onChange={handleInputChange}
                   required
                   disabled={loading}
@@ -392,44 +374,41 @@ export default function EditFreelancer() {
 
               <div className="form-row-edit">
                 <div className="form-group">
-                  <label htmlFor="cpf" className="form-label-edit">CPF *</label>
+                  <label htmlFor="cpf_freelancer" className="form-label-edit">CPF</label>
                   <input
                     placeholder="000.000.000-00"
                     type="text"
-                    id="cpf"
-                    name="cpf"
-                    value={formData.cpf}
+                    id="cpf_freelancer"
+                    name="cpf_freelancer"
+                    value={formData.cpf_freelancer}
                     onChange={handleCpfChange}
                     maxLength="14"
-                    required
                     disabled={loading}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="birthday" className="form-label-edit">Data de Nascimento *</label>
+                  <label htmlFor="birthday_freelancer" className="form-label-edit">Data de Nascimento</label>
                   <input
                     type="date"
-                    id="birthday"
-                    name="birthday"
-                    value={formData.birthday}
+                    id="birthday_freelancer"
+                    name="birthday_freelancer"
+                    value={formData.birthday_freelancer}
                     onChange={handleInputChange}
-                    required
                     disabled={loading}
                   />
                 </div>
               </div>
 
               <div className="form-group">
-                <label htmlFor="occupation" className="form-label-edit">Ocupação/Profissão *</label>
+                <label htmlFor="occupation_freelancer" className="form-label-edit">Ocupação/Profissão</label>
                 <input
                   placeholder="Ex: Desenvolvedor Front-end, Designer UX, Marketing Digital"
                   type="text"
-                  id="occupation"
-                  name="occupation"
-                  value={formData.occupation}
+                  id="occupation_freelancer"
+                  name="occupation_freelancer"
+                  value={formData.occupation_freelancer}
                   onChange={handleInputChange}
-                  required
                   disabled={loading}
                 />
               </div>
@@ -440,13 +419,13 @@ export default function EditFreelancer() {
               <h3 className="section-title">📞 Contato e Localização</h3>
 
               <div className="form-group">
-                <label htmlFor="phone" className="form-label-edit">Telefone/WhatsApp</label>
+                <label htmlFor="phone_user" className="form-label-edit">Telefone/WhatsApp</label>
                 <input
                   placeholder="(11) 99999-9999"
                   type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
+                  id="phone_user"
+                  name="phone_user"
+                  value={formData.phone_user}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
@@ -454,26 +433,26 @@ export default function EditFreelancer() {
 
               <div className="form-row-edit">
                 <div className="form-group">
-                  <label htmlFor="city" className="form-label-edit">Cidade</label>
+                  <label htmlFor="city_user" className="form-label-edit">Cidade</label>
                   <input
                     placeholder="São Paulo, Rio de Janeiro, Belo Horizonte..."
                     type="text"
-                    id="city"
-                    name="city"
-                    value={formData.city}
+                    id="city_user"
+                    name="city_user"
+                    value={formData.city_user}
                     onChange={handleInputChange}
                     disabled={loading}
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="state" className="form-label-edit">Estado (UF)</label>
+                  <label htmlFor="state_user" className="form-label-edit">Estado (UF)</label>
                   <input
                     placeholder="SP, RJ, MG, etc."
                     type="text"
-                    id="state"
-                    name="state"
-                    value={formData.state}
+                    id="state_user"
+                    name="state_user"
+                    value={formData.state_user}
                     onChange={handleInputChange}
                     maxLength="2"
                     disabled={loading}
@@ -487,39 +466,39 @@ export default function EditFreelancer() {
               <h3 className="section-title">🌐 Redes Sociais e Portfólio</h3>
 
               <div className="form-group">
-                <label htmlFor="linkedin" className="form-label-edit">LinkedIn</label>
+                <label htmlFor="linkedin_link_user" className="form-label-edit">LinkedIn</label>
                 <input
                   placeholder="https://linkedin.com/in/seuperfil"
                   type="url"
-                  id="linkedin"
-                  name="linkedin"
-                  value={formData.linkedin}
+                  id="linkedin_link_user"
+                  name="linkedin_link_user"
+                  value={formData.linkedin_link_user}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="instagram" className="form-label-edit">Instagram</label>
+                <label htmlFor="insta_link_user" className="form-label-edit">Instagram</label>
                 <input
                   placeholder="https://instagram.com/seuperfil"
                   type="url"
-                  id="instagram"
-                  name="instagram"
-                  value={formData.instagram}
+                  id="insta_link_user"
+                  name="insta_link_user"
+                  value={formData.insta_link_user}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
               </div>
 
               <div className="form-group">
-                <label htmlFor="portfolio" className="form-label-edit">Link do Portfólio</label>
+                <label htmlFor="link_portfolio_freelancer" className="form-label-edit">Link do Portfólio</label>
                 <input
                   placeholder="https://meuportfolio.com ou https://github.com/seuperfil"
                   type="url"
-                  id="portfolio"
-                  name="portfolio"
-                  value={formData.portfolio}
+                  id="link_portfolio_freelancer"
+                  name="link_portfolio_freelancer"
+                  value={formData.link_portfolio_freelancer}
                   onChange={handleInputChange}
                   disabled={loading}
                 />
@@ -535,13 +514,13 @@ export default function EditFreelancer() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="bio" className="form-label-edit">Sobre você</label>
+                <label htmlFor="bio_user" className="form-label-edit">Sobre você</label>
                 <textarea
                   placeholder="Ex: Sou desenvolvedor front-end com 3 anos de experiência, especializado em React e TypeScript. Formado em Ciência da Computação, busco oportunidades para trabalhar em projetos desafiadores que impactem positivamente os usuários..."
-                  id="bio"
-                  name="bio"
+                  id="bio_user"
+                  name="bio_user"
                   rows="6"
-                  value={formData.bio}
+                  value={formData.bio_user}
                   onChange={handleInputChange}
                   className="form-textarea"
                   disabled={loading}
@@ -559,7 +538,7 @@ export default function EditFreelancer() {
 
               <div className="skills-input-grid">
                 <div className="form-group">
-                  <label htmlFor="skill_1" className="form-label-edit">Habilidade Principal 1 *</label>
+                  <label htmlFor="skill_1" className="form-label-edit">Habilidade Principal 1</label>
                   <input
                     placeholder="Ex: JavaScript, React, UI/UX Design, Marketing Digital, Gestão de Projetos"
                     type="text"
@@ -567,7 +546,6 @@ export default function EditFreelancer() {
                     name="skill_1"
                     value={formData.skill_1}
                     onChange={handleInputChange}
-                    required
                     disabled={loading}
                   />
                 </div>
@@ -641,7 +619,7 @@ export default function EditFreelancer() {
 
             {/* ALTERAÇÃO DE SENHA */}
             <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">Alteração de Senha</h3>
+              <h3 className="section-title">🔒 Alteração de Senha</h3>
               <p className="form-info-edit">
                 Preencha apenas se desejar alterar sua senha atual.
                 Deixe os campos em branco para manter a senha atual.
@@ -719,7 +697,6 @@ export default function EditFreelancer() {
                   lineHeight: '1.5'
                 }}>
                   <strong>💡 Dica:</strong> Após salvar, visite seu perfil para visualizar como ficou!
-                  Suas habilidades aparecerão na seção dedicada do seu perfil.
                 </p>
               </div>
             </div>
