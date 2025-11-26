@@ -119,26 +119,14 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="profile">
-        <header>
-          <div className="menu">
-            <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
-            <Link id="nomeheader" to="/">SkillMatch</Link>
-          </div>
-          <div className="menu" id="menuLinks">
-            <button onClick={handleRefresh} className="refresh-btn">
-              <RefreshCw size={16} />
-              Recarregar
-            </button>
-          </div>
-        </header>
-        <div class="loading-container">
-          <div class="loading-spinner-large"></div>
+        <div className="loading-container">
+          <div className="loading-spinner-large"></div>
           <p>Carregando seu perfil...</p>
           <small>Autenticando e buscando dados</small>
-          <div class="loading-dots">
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
+          <div className="loading-dots">
+            <div className="loading-dot"></div>
+            <div className="loading-dot"></div>
+            <div className="loading-dot"></div>
           </div>
         </div>
       </div>
