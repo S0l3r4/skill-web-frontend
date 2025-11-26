@@ -1,55 +1,58 @@
 import '../styles/index.css';
 import '../styles/profile.css';
-import { ArrowLeft, Instagram, Mail, AlertCircle, Save, User, MapPin, Phone, Globe, BookOpen, Lock, Award } from "lucide-react";
+import { ArrowLeft, Save, User, MapPin, Phone, Globe, BookOpen, Lock, Award, Mail, Instagram } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient.js";
 
 export default function EditFreelancer() {
   const navigate = useNavigate();
-  const [loadingData, setLoadingData] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const [formData, setFormData] = useState({
     // Dados básicos
-    name_user: '',
-    email_user: '',
-    phone_user: '',
-    city_user: '',
-    state_user: '',
-    linkedin_link_user: '',
-    insta_link_user: '',
-    bio_user: '',
+    name: '',
+    email: '',
+    phone: '',
+    city: '',
+    state: '',
+    linkedin: '',
+    instagram: '',
+    bio: '',
 
-    // Dados específicos do freelancer
-    cpf_freelancer: '',
-    birthday_freelancer: '',
-    occupation_freelancer: '',
-    link_portfolio_freelancer: '',
+    // Dados do freelancer
+    cpf: '',
+    birthday: '',
+    occupation: '',
+    portfolio: '',
 
     // Habilidades
     skills: ['', '', '', '', '', ''],
 
     // Senha
-    senha: '',
-    confirmarSenha: ''
+    password: '',
+    confirmPassword: ''
   });
 
   const [formErrors, setFormErrors] = useState({});
 
-  // BUSCAR DADOS DO USUÁRIO
+  // Buscar dados do usuário
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
   const fetchUserData = async () => {
     try {
-      setLoadingData(true);
+      setLoading(true);
       setError('');
-      console.log("🔄 Buscando dados do freelancer...");
 
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
-        throw new Error("Usuário não autenticado - faça login novamente");
+        throw new Error("Sessão expirada. Faça login novamente.");
       }
 
       const token = session.access_token;
@@ -63,58 +66,42 @@ export default function EditFreelancer() {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Sessão expirada. Por favor, faça login novamente.");
-        }
         throw new Error(`Erro ao buscar dados: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log("📦 Dados recebidos do backend:", result);
 
       if (result.success) {
         const user = result.user;
-
-        // Preencher formulário com tratamento seguro para null/undefined
         setFormData({
-          name_user: user.name_user || '',
-          email_user: user.email_user || '',
-          phone_user: user.phone_user || '',
-          city_user: user.city_user || '',
-          state_user: user.state_user || '',
-          linkedin_link_user: user.linkedin_link_user || '',
-          insta_link_user: user.insta_link_user || '',
-          bio_user: user.bio_user || '',
-          cpf_freelancer: user.cpf_freelancer || '',
-          birthday_freelancer: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '',
-          occupation_freelancer: user.ocuppation_freelancer || user.ocupation_freelancer || user.occupation_freelancer || '',
-          link_portfolio_freelancer: user.link_portfolio_freelancer || '',
-          skills: ['', '', '', '', '', ''], // Você precisará adaptar conforme sua estrutura de skills
-          senha: '',
-          confirmarSenha: ''
+          name: user.name_user || '',
+          email: user.email_user || '',
+          phone: user.phone_user || '',
+          city: user.city_user || '',
+          state: user.state_user || '',
+          linkedin: user.linkedin_link_user || '',
+          instagram: user.insta_link_user || '',
+          bio: user.bio_user || '',
+          cpf: user.cpf_freelancer || '',
+          birthday: user.birthday_freelancer ? user.birthday_freelancer.split('T')[0] : '',
+          occupation: user.occupation_freelancer || user.ocupation_freelancer || user.ocuppation_freelancer || '',
+          portfolio: user.link_portfolio_freelancer || '',
+          skills: ['', '', '', '', '', ''],
+          password: '',
+          confirmPassword: ''
         });
-
-        console.log("✅ Dados carregados com sucesso!");
       } else {
-        throw new Error(result.error || 'Erro ao carregar dados do perfil');
+        throw new Error(result.error || 'Erro ao carregar dados');
       }
 
     } catch (error) {
-      console.error('❌ Erro ao buscar dados:', error);
+      console.error('Erro ao buscar dados:', error);
       setError(error.message);
-      if (error.message.includes("não autenticado") || error.message.includes("Sessão expirada")) {
-        setTimeout(() => navigate('/login'), 2000);
-      }
     } finally {
-      setLoadingData(false);
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
-
-  // HANDLE INPUT CHANGE
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -122,7 +109,7 @@ export default function EditFreelancer() {
       [name]: value
     }));
     
-    // Limpar erro do campo quando usuário começar a digitar
+    // Limpar erro do campo quando usuário digitar
     if (formErrors[name]) {
       setFormErrors(prev => ({
         ...prev,
@@ -131,7 +118,6 @@ export default function EditFreelancer() {
     }
   };
 
-  // HANDLE SKILLS CHANGE
   const handleSkillChange = (index, value) => {
     const newSkills = [...formData.skills];
     newSkills[index] = value;
@@ -141,72 +127,66 @@ export default function EditFreelancer() {
     }));
   };
 
-  // FORMATAR CPF
-  const handleCpfChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-
-    if (value.length <= 11) {
-      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-    } else {
-      value = value.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  const formatCPF = (value) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 11) {
+      if (numbers.length <= 3) return numbers;
+      if (numbers.length <= 6) return numbers.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+      if (numbers.length <= 9) return numbers.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
     }
+    return numbers.slice(0, 11).replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+  };
 
+  const handleCpfChange = (e) => {
+    const formattedCPF = formatCPF(e.target.value);
     setFormData(prev => ({
       ...prev,
-      cpf_freelancer: value
+      cpf: formattedCPF
     }));
   };
 
-  // VALIDAÇÃO DO FORMULÁRIO
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.name_user?.trim()) {
-      errors.name_user = "Nome completo é obrigatório";
+    // Validações obrigatórias
+    if (!formData.name.trim()) errors.name = "Nome completo é obrigatório";
+    if (!formData.email.trim()) errors.email = "Email é obrigatório";
+    if (!formData.cpf.trim()) errors.cpf = "CPF é obrigatório";
+    if (!formData.birthday) errors.birthday = "Data de nascimento é obrigatória";
+    if (!formData.occupation.trim()) errors.occupation = "Ocupação é obrigatória";
+
+    // Validações de formato
+    if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Email inválido";
     }
 
-    if (!formData.email_user?.trim()) {
-      errors.email_user = "Email é obrigatório";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email_user)) {
-      errors.email_user = "Email inválido";
+    if (formData.cpf && formData.cpf.replace(/\D/g, '').length !== 11) {
+      errors.cpf = "CPF deve ter 11 dígitos";
     }
 
-    if (!formData.cpf_freelancer?.trim()) {
-      errors.cpf_freelancer = "CPF é obrigatório";
-    } else if (formData.cpf_freelancer.replace(/\D/g, '').length !== 11) {
-      errors.cpf_freelancer = "CPF deve ter 11 dígitos";
-    }
-
-    if (!formData.birthday_freelancer) {
-      errors.birthday_freelancer = "Data de nascimento é obrigatória";
-    } else {
-      const birthDate = new Date(formData.birthday_freelancer);
+    if (formData.birthday) {
+      const birthDate = new Date(formData.birthday);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      
-      if (age < 16) {
-        errors.birthday_freelancer = "Você deve ter pelo menos 16 anos";
+      if (age < 16) errors.birthday = "Você deve ter pelo menos 16 anos";
+    }
+
+    if (formData.state && formData.state.length !== 2) {
+      errors.state = "UF deve ter 2 caracteres";
+    }
+
+    // Validação de senha
+    if (formData.password || formData.confirmPassword) {
+      if (formData.password.length < 6) {
+        errors.password = "Senha deve ter no mínimo 6 caracteres";
+      }
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = "As senhas não coincidem";
       }
     }
 
-    if (!formData.occupation_freelancer?.trim()) {
-      errors.occupation_freelancer = "Ocupação é obrigatória";
-    }
-
-    if (formData.senha || formData.confirmarSenha) {
-      if (formData.senha !== formData.confirmarSenha) {
-        errors.confirmarSenha = "As senhas não coincidem";
-      }
-      if (formData.senha.length < 6) {
-        errors.senha = "A senha deve ter no mínimo 6 caracteres";
-      }
-    }
-
-    if (formData.state_user && formData.state_user.length !== 2) {
-      errors.state_user = "UF deve ter 2 caracteres";
-    }
-
-    // Validar skills - pelo menos uma skill é obrigatória
+    // Validação de habilidades
     const validSkills = formData.skills.filter(skill => skill.trim() !== '');
     if (validSkills.length === 0) {
       errors.skills = "Adicione pelo menos uma habilidade";
@@ -216,7 +196,6 @@ export default function EditFreelancer() {
     return Object.keys(errors).length === 0;
   };
 
-  // ENVIAR DADOS PARA ATUALIZAÇÃO
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -224,49 +203,45 @@ export default function EditFreelancer() {
     setSuccess('');
 
     try {
-      console.log("🔄 Iniciando atualização...");
-
       if (!validateForm()) {
-        throw new Error("Por favor, corrija os erros no formulário");
+        throw new Error("Corrija os erros no formulário antes de enviar");
       }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error("Sessão expirada - faça login novamente");
+        throw new Error("Sessão expirada. Faça login novamente.");
       }
 
       const token = session.access_token;
 
-      // PREPARAR DADOS DE FORMA SEGURA
+      // Preparar dados para envio
       const updateData = {
-        // Dados da tabela USER
-        name: formData.name_user.trim(),
-        email: formData.email_user.trim(),
-        phone: formData.phone_user.trim() || null,
-        city: formData.city_user.trim() || null,
-        state: formData.state_user.trim() || null,
-        linkedin: formData.linkedin_link_user.trim() || null,
-        instagram: formData.insta_link_user.trim() || null,
-        bio: formData.bio_user.trim() || null,
+        // Dados básicos
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || null,
+        city: formData.city.trim() || null,
+        state: formData.state.trim() || null,
+        linkedin: formData.linkedin.trim() || null,
+        instagram: formData.instagram.trim() || null,
+        bio: formData.bio.trim() || null,
 
-        // Dados da tabela FREELANCER
-        cpf: formData.cpf_freelancer ? formData.cpf_freelancer.replace(/\D/g, '') : null,
-        birthday: formData.birthday_freelancer || null,
-        occupation: formData.occupation_freelancer.trim() || null,
-        portfolio: formData.link_portfolio_freelancer.trim() || null,
+        // Dados do freelancer
+        cpf: formData.cpf.replace(/\D/g, ''),
+        birthday: formData.birthday,
+        occupation: formData.occupation.trim(),
+        portfolio: formData.portfolio.trim() || null,
 
-        // Skills
+        // Habilidades
         skills: formData.skills.filter(skill => skill.trim() !== '')
       };
 
-      // Adicionar senha apenas se fornecida
-      if (formData.senha && formData.senha.trim()) {
-        updateData.senha = formData.senha;
+      // Adicionar senha se fornecida
+      if (formData.password) {
+        updateData.senha = formData.password;
       }
 
-      console.log("📤 Dados preparados para envio:", updateData);
-
-      // Chamar backend para atualizar
+      // Enviar para o backend
       const response = await fetch('https://skill-web-backend.onrender.com/api/update-profile', {
         method: 'POST',
         headers: {
@@ -276,118 +251,44 @@ export default function EditFreelancer() {
         body: JSON.stringify(updateData)
       });
 
-      console.log("📨 Status da resposta:", response.status);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error("❌ Erro na resposta:", errorText);
-        throw new Error(`Erro ao atualizar perfil: ${errorText || response.statusText}`);
+        throw new Error(`Erro ao atualizar: ${response.status} - ${errorText}`);
       }
 
       const result = await response.json();
-      console.log("✅ Resposta completa:", result);
 
       if (result.success) {
         setSuccess("Perfil atualizado com sucesso!");
-        setTimeout(() => {
-          navigate('/profile');
-        }, 1500);
+        setTimeout(() => navigate('/profile'), 2000);
       } else {
-        throw new Error(result.error || 'Erro desconhecido ao atualizar perfil');
+        throw new Error(result.error || 'Erro ao atualizar perfil');
       }
 
     } catch (error) {
-      console.error('❌ Erro completo:', error);
+      console.error('Erro ao atualizar:', error);
       setError(error.message);
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Tela de carregamento
-  if (loadingData) {
-    return (
-      <div className="signUp">
-        <header>
-          <div className="menu">
-            <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
-            <Link id="nomeheader" to="/">SkillMatch</Link>
-          </div>
-        </header>
-
-        <section className="signUp-section">
-          <div className="edit-header">
-            <h2>EDITAR PERFIL - FREELANCER</h2>
-          </div>
-
-          <div className="loading-container">
-            <div className="loading-spinner-large"></div>
-            <p>Carregando seus dados...</p>
-            <small>Aguarde enquanto buscamos suas informações</small>
-          </div>
-        </section>
-
-        <Footer />
-      </div>
-    );
+  if (loading) {
+    return <LoadingScreen />;
   }
 
-  // Tela de erro
   if (error && !submitting) {
-    return (
-      <div className="signUp">
-        <header>
-          <div className="menu">
-            <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
-            <Link id="nomeheader" to="/">SkillMatch</Link>
-          </div>
-        </header>
-
-        <section className="signUp-section">
-          <div className="edit-header">
-            <h2>EDITAR PERFIL - FREELANCER</h2>
-          </div>
-
-          <div className="error-container">
-            <div className="error-message">
-              <div className="error-icon">
-                <AlertCircle size={48} color="#dc3545" />
-              </div>
-              <h3>Erro ao Carregar Dados</h3>
-              <p>{error}</p>
-              <div className="error-actions">
-                <button onClick={fetchUserData} className="btn-submit">
-                  Tentar Novamente
-                </button>
-                <Link to="/profile" className="btn-cancel">
-                  Voltar ao Perfil
-                </Link>
-                <Link to="/login" className="btn-cancel">
-                  Fazer Login
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <Footer />
-      </div>
-    );
+    return <ErrorScreen error={error} onRetry={fetchUserData} />;
   }
 
   return (
     <div className="signUp">
-      <header>
-        <div className="menu">
-          <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
-          <Link id="nomeheader" to="/">SkillMatch</Link>
-        </div>
-      </header>
-
+      <Header />
+      
       <section className="signUp-section">
         <div className="edit-header">
           <h2>
-            <User size={24} style={{ marginRight: '10px' }} />
+            <User size={24} />
             EDITAR PERFIL - FREELANCER
           </h2>
           <Link to="/profile" className="back-link">
@@ -396,369 +297,269 @@ export default function EditFreelancer() {
           </Link>
         </div>
 
-        {/* MENSAGENS DE SUCESSO/ERRO */}
+        {/* Mensagens de status */}
         {success && (
-          <div className="success-message" style={{
-            background: '#d4edda',
-            color: '#155724',
-            padding: '12px 20px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            border: '1px solid #c3e6cb',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
+          <div className="alert success">
             <Save size={20} />
             <span>{success} Redirecionando...</span>
           </div>
         )}
 
         {error && (
-          <div className="error-message" style={{
-            background: '#f8d7da',
-            color: '#721c24',
-            padding: '12px 20px',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            border: '1px solid #f5c6cb',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            <AlertCircle size={20} />
+          <div className="alert error">
             <span>{error}</span>
           </div>
         )}
 
         <div className="signUp-form edit-form">
           <form onSubmit={handleSubmit}>
+            {/* Dados Pessoais */}
+            <FormSection 
+              icon={<User size={20} />}
+              title="Dados Pessoais"
+            >
+              <FormField
+                label="Nome Completo *"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleInputChange}
+                error={formErrors.name}
+                placeholder="João Silva"
+                required
+                disabled={submitting}
+              />
 
-            {/* DADOS PESSOAIS */}
-            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">
-                <User size={20} style={{ marginRight: '8px' }} />
-                Dados Pessoais
-              </h3>
+              <FormField
+                label="Email *"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                error={formErrors.email}
+                placeholder="seu@email.com"
+                required
+                disabled={submitting}
+              />
 
-              <div className="form-group">
-                <label htmlFor="name_user" className="form-label-edit">Nome Completo *</label>
-                <input
-                  placeholder="João Silva"
+              <div className="form-row">
+                <FormField
+                  label="CPF *"
+                  name="cpf"
                   type="text"
-                  id="name_user"
-                  name="name_user"
-                  value={formData.name_user}
-                  onChange={handleInputChange}
+                  value={formData.cpf}
+                  onChange={handleCpfChange}
+                  error={formErrors.cpf}
+                  placeholder="000.000.000-00"
+                  maxLength="14"
                   required
                   disabled={submitting}
-                  className={formErrors.name_user ? 'input-error' : ''}
                 />
-                {formErrors.name_user && <span className="error-text">{formErrors.name_user}</span>}
-              </div>
 
-              <div className="form-group">
-                <label htmlFor="email_user" className="form-label-edit">Email *</label>
-                <input
-                  placeholder="seu@email.com"
-                  type="email"
-                  id="email_user"
-                  name="email_user"
-                  value={formData.email_user}
+                <FormField
+                  label="Data de Nascimento *"
+                  name="birthday"
+                  type="date"
+                  value={formData.birthday}
                   onChange={handleInputChange}
+                  error={formErrors.birthday}
                   required
                   disabled={submitting}
-                  className={formErrors.email_user ? 'input-error' : ''}
                 />
-                {formErrors.email_user && <span className="error-text">{formErrors.email_user}</span>}
               </div>
 
-              <div className="form-row-edit">
-                <div className="form-group">
-                  <label htmlFor="cpf_freelancer" className="form-label-edit">CPF *</label>
-                  <input
-                    placeholder="000.000.000-00"
-                    type="text"
-                    id="cpf_freelancer"
-                    name="cpf_freelancer"
-                    value={formData.cpf_freelancer}
-                    onChange={handleCpfChange}
-                    maxLength="14"
-                    required
-                    disabled={submitting}
-                    className={formErrors.cpf_freelancer ? 'input-error' : ''}
-                  />
-                  {formErrors.cpf_freelancer && <span className="error-text">{formErrors.cpf_freelancer}</span>}
-                </div>
+              <FormField
+                label="Ocupação/Profissão *"
+                name="occupation"
+                type="text"
+                value={formData.occupation}
+                onChange={handleInputChange}
+                error={formErrors.occupation}
+                placeholder="Desenvolvedor Front-end, Designer UX, etc."
+                required
+                disabled={submitting}
+              />
+            </FormSection>
 
-                <div className="form-group">
-                  <label htmlFor="birthday_freelancer" className="form-label-edit">Data de Nascimento *</label>
-                  <input
-                    type="date"
-                    id="birthday_freelancer"
-                    name="birthday_freelancer"
-                    value={formData.birthday_freelancer}
-                    onChange={handleInputChange}
-                    required
-                    disabled={submitting}
-                    className={formErrors.birthday_freelancer ? 'input-error' : ''}
-                  />
-                  {formErrors.birthday_freelancer && <span className="error-text">{formErrors.birthday_freelancer}</span>}
-                </div>
-              </div>
+            {/* Contato e Localização */}
+            <FormSection 
+              icon={<MapPin size={20} />}
+              title="Contato e Localização"
+            >
+              <FormField
+                label="Telefone/WhatsApp"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="(11) 99999-9999"
+                disabled={submitting}
+              />
 
-              <div className="form-group">
-                <label htmlFor="occupation_freelancer" className="form-label-edit">Ocupação/Profissão *</label>
-                <input
-                  placeholder="Ex: Desenvolvedor Front-end, Designer UX, Marketing Digital"
+              <div className="form-row">
+                <FormField
+                  label="Cidade"
+                  name="city"
                   type="text"
-                  id="occupation_freelancer"
-                  name="occupation_freelancer"
-                  value={formData.occupation_freelancer}
+                  value={formData.city}
                   onChange={handleInputChange}
-                  required
+                  placeholder="São Paulo, Rio de Janeiro..."
                   disabled={submitting}
-                  className={formErrors.occupation_freelancer ? 'input-error' : ''}
                 />
-                {formErrors.occupation_freelancer && <span className="error-text">{formErrors.occupation_freelancer}</span>}
-              </div>
-            </div>
 
-            {/* CONTATO E LOCALIZAÇÃO */}
-            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">
-                <MapPin size={20} style={{ marginRight: '8px' }} />
-                Contato e Localização
-              </h3>
-
-              <div className="form-group">
-                <label htmlFor="phone_user" className="form-label-edit">Telefone/WhatsApp</label>
-                <input
-                  placeholder="(11) 99999-9999"
-                  type="tel"
-                  id="phone_user"
-                  name="phone_user"
-                  value={formData.phone_user}
+                <FormField
+                  label="Estado (UF)"
+                  name="state"
+                  type="text"
+                  value={formData.state}
                   onChange={handleInputChange}
+                  error={formErrors.state}
+                  placeholder="SP, RJ, MG"
+                  maxLength="2"
                   disabled={submitting}
                 />
               </div>
+            </FormSection>
 
-              <div className="form-row-edit">
-                <div className="form-group">
-                  <label htmlFor="city_user" className="form-label-edit">Cidade</label>
-                  <input
-                    placeholder="São Paulo, Rio de Janeiro, Belo Horizonte..."
-                    type="text"
-                    id="city_user"
-                    name="city_user"
-                    value={formData.city_user}
-                    onChange={handleInputChange}
-                    disabled={submitting}
-                  />
-                </div>
+            {/* Redes Sociais e Portfólio */}
+            <FormSection 
+              icon={<Globe size={20} />}
+              title="Redes Sociais e Portfólio"
+            >
+              <FormField
+                label="LinkedIn"
+                name="linkedin"
+                type="url"
+                value={formData.linkedin}
+                onChange={handleInputChange}
+                placeholder="https://linkedin.com/in/seuperfil"
+                disabled={submitting}
+              />
 
-                <div className="form-group">
-                  <label htmlFor="state_user" className="form-label-edit">Estado (UF)</label>
-                  <input
-                    placeholder="SP, RJ, MG, etc."
-                    type="text"
-                    id="state_user"
-                    name="state_user"
-                    value={formData.state_user}
-                    onChange={handleInputChange}
-                    maxLength="2"
-                    disabled={submitting}
-                    className={formErrors.state_user ? 'input-error' : ''}
-                  />
-                  {formErrors.state_user && <span className="error-text">{formErrors.state_user}</span>}
-                </div>
-              </div>
-            </div>
+              <FormField
+                label="Instagram"
+                name="instagram"
+                type="url"
+                value={formData.instagram}
+                onChange={handleInputChange}
+                placeholder="https://instagram.com/seuperfil"
+                disabled={submitting}
+              />
 
-            {/* REDES SOCIAIS E PORTFÓLIO */}
-            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">
-                <Globe size={20} style={{ marginRight: '8px' }} />
-                Redes Sociais e Portfólio
-              </h3>
+              <FormField
+                label="Portfólio"
+                name="portfolio"
+                type="url"
+                value={formData.portfolio}
+                onChange={handleInputChange}
+                placeholder="https://meuportfolio.com"
+                disabled={submitting}
+              />
+            </FormSection>
 
-              <div className="form-group">
-                <label htmlFor="linkedin_link_user" className="form-label-edit">LinkedIn</label>
-                <input
-                  placeholder="https://linkedin.com/in/seuperfil"
-                  type="url"
-                  id="linkedin_link_user"
-                  name="linkedin_link_user"
-                  value={formData.linkedin_link_user}
-                  onChange={handleInputChange}
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="insta_link_user" className="form-label-edit">Instagram</label>
-                <input
-                  placeholder="https://instagram.com/seuperfil"
-                  type="url"
-                  id="insta_link_user"
-                  name="insta_link_user"
-                  value={formData.insta_link_user}
-                  onChange={handleInputChange}
-                  disabled={submitting}
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="link_portfolio_freelancer" className="form-label-edit">Link do Portfólio</label>
-                <input
-                  placeholder="https://meuportfolio.com ou https://github.com/seuperfil"
-                  type="url"
-                  id="link_portfolio_freelancer"
-                  name="link_portfolio_freelancer"
-                  value={formData.link_portfolio_freelancer}
-                  onChange={handleInputChange}
-                  disabled={submitting}
-                />
-              </div>
-            </div>
-
-            {/* HABILIDADES */}
-            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">
-                <Award size={20} style={{ marginRight: '8px' }} />
-                Habilidades e Competências
-              </h3>
-
-              <div className="form-info-edit">
-                Adicione suas principais habilidades (tecnologias, ferramentas, soft skills).
-                Pelo menos uma habilidade é obrigatória.
-              </div>
-
-              {formErrors.skills && <span className="error-text" style={{ display: 'block', marginBottom: '15px' }}>{formErrors.skills}</span>}
-
+            {/* Habilidades */}
+            <FormSection 
+              icon={<Award size={20} />}
+              title="Habilidades e Competências"
+              description="Adicione suas principais habilidades (tecnologias, ferramentas, soft skills). Pelo menos uma habilidade é obrigatória."
+            >
+              {formErrors.skills && (
+                <div className="error-text">{formErrors.skills}</div>
+              )}
+              
               <div className="skills-grid">
                 {formData.skills.map((skill, index) => (
-                  <div key={index} className="form-group">
-                    <label htmlFor={`skill-${index}`} className="form-label-edit">
-                      Habilidade {index + 1} {index === 0 && '*'}
-                    </label>
-                    <input
-                      placeholder={`Ex: ${getSkillPlaceholder(index)}`}
-                      type="text"
-                      id={`skill-${index}`}
-                      value={skill}
-                      onChange={(e) => handleSkillChange(index, e.target.value)}
-                      disabled={submitting}
-                    />
-                  </div>
+                  <FormField
+                    key={index}
+                    label={`Habilidade ${index + 1} ${index === 0 ? '*' : ''}`}
+                    name={`skill-${index}`}
+                    type="text"
+                    value={skill}
+                    onChange={(e) => handleSkillChange(index, e.target.value)}
+                    placeholder={getSkillPlaceholder(index)}
+                    required={index === 0}
+                    disabled={submitting}
+                  />
                 ))}
               </div>
-            </div>
+            </FormSection>
 
-            {/* BIOGRAFIA */}
-            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">
-                <BookOpen size={20} style={{ marginRight: '8px' }} />
-                Biografia e Apresentação
-              </h3>
-
-              <div className="form-info-edit">
-                Conte um pouco sobre sua experiência, formação, objetivos profissionais e o que te motiva.
-              </div>
-
+            {/* Biografia */}
+            <FormSection 
+              icon={<BookOpen size={20} />}
+              title="Biografia e Apresentação"
+              description="Conte um pouco sobre sua experiência, formação, objetivos profissionais e o que te motiva."
+            >
               <div className="form-group">
-                <label htmlFor="bio_user" className="form-label-edit">Sobre você</label>
+                <label className="form-label">Sobre você</label>
                 <textarea
-                  placeholder="Ex: Sou desenvolvedor front-end com 3 anos de experiência, especializado em React e TypeScript. Formado em Ciência da Computação, busco oportunidades para trabalhar em projetos desafiadores que impactem positivamente os usuários..."
-                  id="bio_user"
-                  name="bio_user"
-                  rows="6"
-                  value={formData.bio_user}
+                  name="bio"
+                  value={formData.bio}
                   onChange={handleInputChange}
+                  placeholder="Ex: Sou desenvolvedor front-end com 3 anos de experiência, especializado em React e TypeScript..."
+                  rows="6"
                   className="form-textarea"
                   disabled={submitting}
                 />
               </div>
-            </div>
+            </FormSection>
 
-            {/* ALTERAÇÃO DE SENHA */}
-            <div className="form-section-edit" style={{ marginBottom: '40px' }}>
-              <h3 className="section-title">
-                <Lock size={20} style={{ marginRight: '8px' }} />
-                Alteração de Senha
-              </h3>
-              <p className="form-info-edit">
-                Preencha apenas se desejar alterar sua senha atual.
-                Deixe os campos em branco para manter a senha atual.
-              </p>
+            {/* Alteração de Senha */}
+            <FormSection 
+              icon={<Lock size={20} />}
+              title="Alteração de Senha"
+              description="Preencha apenas se desejar alterar sua senha atual. Deixe os campos em branco para manter a senha atual."
+            >
+              <div className="form-row">
+                <FormField
+                  label="Nova Senha"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  error={formErrors.password}
+                  placeholder="Mínimo 6 caracteres"
+                  minLength="6"
+                  disabled={submitting}
+                />
 
-              <div className="form-row-edit">
-                <div className="form-group">
-                  <label htmlFor="senha" className="form-label-edit">Nova Senha</label>
-                  <input
-                    placeholder="Mínimo 6 caracteres"
-                    type="password"
-                    id="senha"
-                    name="senha"
-                    value={formData.senha}
-                    onChange={handleInputChange}
-                    minLength="6"
-                    disabled={submitting}
-                    className={formErrors.senha ? 'input-error' : ''}
-                  />
-                  {formErrors.senha && <span className="error-text">{formErrors.senha}</span>}
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="confirmarSenha" className="form-label-edit">Confirme a Nova Senha</label>
-                  <input
-                    placeholder="Digite a mesma senha novamente"
-                    type="password"
-                    id="confirmarSenha"
-                    name="confirmarSenha"
-                    value={formData.confirmarSenha}
-                    onChange={handleInputChange}
-                    minLength="6"
-                    disabled={submitting}
-                    className={formErrors.confirmarSenha ? 'input-error' : ''}
-                  />
-                  {formErrors.confirmarSenha && <span className="error-text">{formErrors.confirmarSenha}</span>}
-                </div>
+                <FormField
+                  label="Confirme a Senha"
+                  name="confirmPassword"
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  error={formErrors.confirmPassword}
+                  placeholder="Digite a mesma senha"
+                  minLength="6"
+                  disabled={submitting}
+                />
               </div>
-            </div>
+            </FormSection>
 
-            {/* BOTÕES DE AÇÃO */}
-            <div className="form-section-edit" style={{ marginBottom: '20px' }}>
-              <h3 className="section-title">Finalizar Edição</h3>
-
-              <div className="form-info-edit">
-                Revise todas as informações antes de salvar. Após a confirmação,
-                suas alterações serão atualizadas imediatamente no seu perfil.
-              </div>
-
-              <div className="form-actions-edit">
-                <button type="submit" className="btnsubmit btn-edit" disabled={submitting}>
+            {/* Ações Finais */}
+            <FormSection title="Finalizar Edição">
+              <div className="form-actions">
+                <button type="submit" className="btn-primary" disabled={submitting}>
                   {submitting ? (
                     <>
-                      <Loader size={18} className="spinner" />
-                      Atualizando Perfil...
+                      <div className="spinner"></div>
+                      Atualizando...
                     </>
                   ) : (
                     <>
                       <Save size={18} />
-                      Salvar Todas as Alterações
+                      Salvar Alterações
                     </>
                   )}
                 </button>
 
-                <Link to="/profile" className="btn-cancel-edit">
+                <Link to="/profile" className="btn-secondary">
                   <ArrowLeft size={18} />
-                  Cancelar e Voltar
+                  Cancelar
                 </Link>
               </div>
-            </div>
-
+            </FormSection>
           </form>
         </div>
       </section>
@@ -768,55 +569,153 @@ export default function EditFreelancer() {
   );
 }
 
-// Função auxiliar para placeholders de skills
-function getSkillPlaceholder(index) {
-  const placeholders = [
-    "React, JavaScript, TypeScript",
-    "UI/UX Design, Figma, Adobe XD",
-    "Node.js, Python, PHP",
-    "Git, Docker, AWS",
-    "Comunicação, Liderança, Scrum",
-    "Inglês, Espanhol, Alemão"
-  ];
-  return placeholders[index] || "Sua habilidade";
+// Componentes auxiliares
+function Header() {
+  return (
+    <header>
+      <div className="menu">
+        <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
+        <Link id="nomeheader" to="/">SkillMatch</Link>
+      </div>
+    </header>
+  );
 }
 
-// Componente Footer
+function FormSection({ icon, title, description, children }) {
+  return (
+    <div className="form-section">
+      <h3 className="section-title">
+        {icon}
+        {title}
+      </h3>
+      {description && <p className="section-description">{description}</p>}
+      {children}
+    </div>
+  );
+}
+
+function FormField({ label, name, type, value, onChange, error, placeholder, required, disabled, ...props }) {
+  return (
+    <div className="form-group">
+      <label className="form-label">
+        {label}
+        {required && <span className="required">*</span>}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        disabled={disabled}
+        className={error ? 'input-error' : ''}
+        {...props}
+      />
+      {error && <span className="error-text">{error}</span>}
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="signUp">
+      <Header />
+      <section className="signUp-section">
+        <div className="edit-header">
+          <h2>EDITAR PERFIL - FREELANCER</h2>
+        </div>
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Carregando seus dados...</p>
+        </div>
+      </section>
+      <Footer />
+    </div>
+  );
+}
+
+function ErrorScreen({ error, onRetry }) {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="signUp">
+      <Header />
+      <section className="signUp-section">
+        <div className="edit-header">
+          <h2>EDITAR PERFIL - FREELANCER</h2>
+        </div>
+        <div className="error-container">
+          <div className="error-content">
+            <h3>Erro ao Carregar Dados</h3>
+            <p>{error}</p>
+            <div className="error-actions">
+              <button onClick={onRetry} className="btn-primary">
+                Tentar Novamente
+              </button>
+              <button onClick={() => navigate('/profile')} className="btn-secondary">
+                Voltar ao Perfil
+              </button>
+              <button onClick={() => navigate('/login')} className="btn-secondary">
+                Fazer Login
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+      <Footer />
+    </div>
+  );
+}
+
 function Footer() {
   return (
     <footer className="footer">
-      <div className="footer1">
-        <div className="flex flex-col items-center md:items-start">
-          <div className="flex items-center gap-2">
-            <img src="/logoNome.png" alt="SkillMatch Logo" className="w-10 h-10" />
-          </div>
+      <div className="footer-content">
+        <div className="footer-section">
+          <img src="/logoNome.png" alt="SkillMatch" className="footer-logo" />
         </div>
-
-        <div className="text-center md:text-left">
-          <h2 className="font-bold text-red-700">Desenvolvido por:</h2>
-          <div className="mails">
+        
+        <div className="footer-section">
+          <h3>Desenvolvido por:</h3>
+          <div className="developer-links">
             <a href="mailto:viiallvesx@gmail.com">Ana Vitória Alves</a>
             <a href="mailto:gibarbutti@gmail.com">Giovanna Barbutti</a>
             <a href="mailto:thomasdamasena2@gmail.com">Thomas Solera</a>
           </div>
         </div>
-
-        <div className="text-center md:text-left">
-          <h2 className="font-bold text-red-700">Contato</h2>
-          <div className="flex items-center gap-2">
-            <Instagram size={16} className="text-gray-700" />
-            <span>@skillmatch.app</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Mail size={16} className="text-gray-700" />
-            <a href="mailto:skillmatchapp0@gmail.com">skillmatchapp0@gmail.com</a>
+        
+        <div className="footer-section">
+          <h3>Contato</h3>
+          <div className="contact-info">
+            <div className="contact-item">
+              <Instagram size={16} />
+              <span>@skillmatch.app</span>
+            </div>
+            <div className="contact-item">
+              <Mail size={16} />
+              <a href="mailto:skillmatchapp0@gmail.com">skillmatchapp0@gmail.com</a>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="text-center mt-6 text-xs" style={{ color: '#93032e' }}>
-        © 2025 SkillMatch. Todos os direitos reservados.
+      
+      <div className="footer-bottom">
+        <p>&copy; 2025 SkillMatch. Todos os direitos reservados.</p>
       </div>
     </footer>
   );
+}
+
+// Função auxiliar
+function getSkillPlaceholder(index) {
+  const placeholders = [
+    "React, JavaScript, TypeScript",
+    "UI/UX Design, Figma",
+    "Node.js, Python",
+    "Git, Docker, AWS", 
+    "Comunicação, Liderança",
+    "Inglês, Espanhol"
+  ];
+  return placeholders[index] || "Sua habilidade";
 }
