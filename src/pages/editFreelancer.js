@@ -9,7 +9,7 @@ export default function EditFreelancer() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
+  
   const [form, setForm] = useState({
     name: '',
     email: '',
@@ -32,7 +32,7 @@ export default function EditFreelancer() {
       });
 
       const result = await response.json();
-
+      
       if (result.success) {
         const user = result.user;
         setForm({
@@ -90,7 +90,7 @@ export default function EditFreelancer() {
 
       const result = await response.json();
       console.log('Resposta do backend:', result);
-
+      
       if (result.success) {
         alert('Perfil salvo com sucesso!');
         navigate('/profile');
@@ -136,11 +136,11 @@ export default function EditFreelancer() {
         </div>
 
         <form onSubmit={handleSubmit} className="signUp-form edit-form">
-
+          
           {/* DADOS BÁSICOS */}
           <div className="form-section-edit">
             <h3>Dados Pessoais</h3>
-
+            
             <div className="form-group">
               <label>Nome *</label>
               <input
@@ -179,7 +179,7 @@ export default function EditFreelancer() {
           <div className="form-section-edit">
             <h3>Habilidades</h3>
             <p>Adicione suas principais habilidades</p>
-
+            
             {form.skills.map((skill, index) => (
               <div key={index} className="form-group">
                 <label>Habilidade {index + 1}</label>
