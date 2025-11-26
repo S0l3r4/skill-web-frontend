@@ -397,14 +397,14 @@ export default function Profile() {
         {/* Botão de Edição */}
         <div className="profile-actions">
           {user?.type_user === 'empresa' && (
-            <Link to="/editar-empresa" className="edit-profile-btn">
+            <Link to="/editarEmpresa" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
             </Link>
           )}
 
           {user?.type_user === 'freelancer' && (
-            <Link to="/editar-freelancer" className="edit-profile-btn">
+            <Link to="/editar" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
             </Link>
