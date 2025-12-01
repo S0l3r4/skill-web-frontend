@@ -49,7 +49,7 @@ export default function EditFreelancer() {
       setError('');
       console.log("🔄 Buscando dados do freelancer...");
 
-      const response = await fetch('http://localhost:3002/api/profile', {
+      const response = await fetch('https://skill-web-backend.onrender.com/api/profileRoutes', {
         method: 'GET',
         credentials: 'include',
         headers: {
@@ -250,7 +250,7 @@ export default function EditFreelancer() {
       });
 
       // Chamar a rota de update-profile
-      const response = await fetch('http://localhost:3002/api/update-profile', {
+      const response = await fetch('https://skill-web-backend.onrender.com/api/updateProfileRoutes', {
         method: 'POST',
         credentials: 'include',
         headers: {
