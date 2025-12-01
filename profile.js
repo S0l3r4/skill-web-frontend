@@ -1,10 +1,10 @@
-
+[file name]: profile.js (frontend completo)
+[file content begin]
 import '../styles/index.css';
 import '../styles/profile.css';
-import { Mail, Instagram, Edit, RefreshCw, Linkedin, Calendar, Briefcase, MapPin, Phone, Globe, Code, Tool } from "lucide-react";
+import { Mail, Instagram, Edit, Linkedin, Calendar, Briefcase, MapPin, Phone, Globe, Code } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabaseClient.js";
 
 export default function Profile() {
   const [user, setUser] = useState(null);
@@ -12,29 +12,18 @@ export default function Profile() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  // BUSCAR PERFIL COM AUTENTICAÇÃO SUPABASE
+  // BUSCAR PERFIL DO USUÁRIO
   const fetchUserProfile = async () => {
     try {
       setLoading(true);
       setError('');
-      console.log("🔄 Buscando perfil via backend...");
+      console.log("🔄 Buscando perfil do usuário...");
 
-      // OBTER SESSÃO ATUAL DO SUPABASE
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        throw new Error("Usuário não autenticado - faça login novamente");
-      }
-
-      const token = session.access_token;
-      console.log("Token obtido:", token ? "Sim" : "Não");
-
-      // CHAMAR BACKEND COM TOKEN
-      const response = await fetch('https://skill-web-backend.onrender.com/api/profile', {
+      const response = await fetch('http://localhost:3002/api/profile', {
         method: 'GET',
+        credentials: 'include', // Importante para enviar cookies de sessão
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -50,20 +39,18 @@ export default function Profile() {
       }
 
       const result = await response.json();
-      console.log("Dados COMPLETOS recebidos:", result);
-      console.log("Skills recebidas:", result.user?.skills);
-      console.log("Número de skills:", result.user?.skills?.length);
+      console.log("✅ Dados recebidos:", result);
+      console.log("📊 Skills recebidas:", result.user?.skills);
 
       if (result.success) {
         setUser(result.user);
         console.log("✅ Perfil carregado com sucesso!");
-        console.log("📊 Skills disponíveis para renderização:", result.user?.skills);
       } else {
         throw new Error(result.error || 'Erro ao carregar perfil');
       }
 
     } catch (error) {
-      console.error('Erro completo:', error);
+      console.error('❌ Erro completo:', error);
       setError(error.message);
 
       if (error.message.includes('não autenticado') || error.message.includes('Sessão expirada')) {
@@ -78,16 +65,19 @@ export default function Profile() {
     fetchUserProfile();
   }, []);
 
-  // LOGOUT CORRETO
+  // LOGOUT
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Erro no logout:', error);
-      }
+      await fetch('http://localhost:3002/api/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
     } catch (err) {
       console.error('Erro no logout:', err);
     } finally {
+      // Limpar localStorage/sessionStorage se necessário
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('isAuthenticated');
       navigate('/login');
     }
   };
@@ -111,9 +101,14 @@ export default function Profile() {
 
     // Converte para string primeiro
     const docString = document.toString();
+    const numbers = docString.replace(/\D/g, '');
 
-    if (type === 'freelancer' && docString.length === 11) {
-      return docString.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    if (type === 'freelancer' && numbers.length === 11) {
+      return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    }
+    
+    if (type === 'empresa' && numbers.length === 14) {
+      return numbers.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
     }
 
     return docString;
@@ -126,16 +121,14 @@ export default function Profile() {
     if (lowerSkill.includes('javascript') || lowerSkill.includes('js') || 
         lowerSkill.includes('typescript') || lowerSkill.includes('react') ||
         lowerSkill.includes('node') || lowerSkill.includes('python') ||
-        lowerSkill.includes('php') || lowerSkill.includes('java') ||
-        lowerSkill.includes('c++') || lowerSkill.includes('c#')) {
+        lowerSkill.includes('php') || lowerSkill.includes('java')) {
       return <Code size={16} />;
     }
     
     if (lowerSkill.includes('git') || lowerSkill.includes('docker') || 
         lowerSkill.includes('aws') || lowerSkill.includes('figma') ||
-        lowerSkill.includes('photoshop') || lowerSkill.includes('illustrator') ||
-        lowerSkill.includes('excel') || lowerSkill.includes('powerpoint')) {
-      return <Tool size={16} />;
+        lowerSkill.includes('photoshop') || lowerSkill.includes('illustrator')) {
+      return "🛠️";
     }
     
     if (lowerSkill.includes('inglês') || lowerSkill.includes('espanhol') ||
@@ -160,12 +153,7 @@ export default function Profile() {
         <div className="loading-container">
           <div className="loading-spinner-large"></div>
           <p>Carregando seu perfil...</p>
-          <small>Autenticando e buscando dados</small>
-          <div className="loading-dots">
-            <div className="loading-dot"></div>
-            <div className="loading-dot"></div>
-            <div className="loading-dot"></div>
-          </div>
+          <small>Aguarde enquanto buscamos suas informações</small>
         </div>
       </div>
     );
@@ -192,12 +180,12 @@ export default function Profile() {
             <h3>Erro ao carregar perfil</h3>
             <p>{error}</p>
             <div className="error-actions">
+              <button onClick={handleRefresh} className="btn-submit">
+                Tentar Novamente
+              </button>
               <button onClick={handleLogout} className="btn-cancel">
                 Fazer Logout
               </button>
-              <Link to="/login" className="btn-cancel">
-                Ir para Login
-              </Link>
             </div>
           </div>
         </div>
@@ -213,9 +201,14 @@ export default function Profile() {
             <img src="/imgLogo.png" alt="SkillMatch Logo" className="logo" />
             <Link id="nomeheader" to="/">SkillMatch</Link>
           </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Sair
-          </button>
+          <div className="profile-header-actions">
+            <button onClick={handleRefresh} className="refresh-btn">
+              Atualizar
+            </button>
+            <button onClick={handleLogout} className="logout-btn">
+              Sair
+            </button>
+          </div>
         </div>
       </header>
 
@@ -231,24 +224,24 @@ export default function Profile() {
           </div>
 
           <div className="profile-info-simple">
-            <h1 className="profile-name-simple">{user?.name_user || 'Usuário'}</h1>
+            <h1 className="profile-name-simple">{user?.name_user || user?.name || 'Usuário'}</h1>
 
             <div className="profile-type-badge">
-              <span className={`type-badge ${user?.type_user}`}>
-                {user?.type_user === 'freelancer' ? 'FREELANCER' :
-                  user?.type_user === 'empresa' ? 'EMPRESA' : 'USUÁRIO'}
+              <span className={`type-badge ${user?.type_user || user?.type}`}>
+                {user?.type_user === 'freelancer' || user?.type === 'freelancer' ? 'FREELANCER' :
+                  user?.type_user === 'empresa' || user?.type === 'empresa' ? 'EMPRESA' : 'USUÁRIO'}
               </span>
             </div>
 
             <div className="profile-email-simple">
               <Mail size={18} />
-              <span>{user?.email_user || 'Email não informado'}</span>
+              <span>{user?.email_user || user?.email || 'Email não informado'}</span>
             </div>
           </div>
         </div>
 
         {/* Informações do Freelancer */}
-        {user?.type_user === 'freelancer' && (
+        {(user?.type_user === 'freelancer' || user?.type === 'freelancer') && (
           <div className="details-container">
             <h3 className="details-title">Informações do Freelancer</h3>
 
@@ -259,7 +252,7 @@ export default function Profile() {
                 </div>
                 <div className="detail-content">
                   <label>Ocupação</label>
-                  <span>{user?.ocupation_freelancer || 'Não informada'}</span>
+                  <span>{user?.ocupation_freelancer || user?.occupation || 'Não informada'}</span>
                 </div>
               </div>
 
@@ -269,7 +262,7 @@ export default function Profile() {
                 </div>
                 <div className="detail-content">
                   <label>Data de Nascimento</label>
-                  <span>{formatDate(user?.birthday_freelancer)}</span>
+                  <span>{formatDate(user?.birthday_freelancer || user?.birthday)}</span>
                 </div>
               </div>
 
@@ -279,18 +272,18 @@ export default function Profile() {
                 </div>
                 <div className="detail-content">
                   <label>CPF</label>
-                  <span>{formatDocument(user?.cpf_freelancer, 'freelancer')}</span>
+                  <span>{formatDocument(user?.cpf_freelancer || user?.cpf, 'freelancer')}</span>
                 </div>
               </div>
 
-              {user?.link_portfolio_freelancer && (
+              {(user?.link_portfolio_freelancer || user?.portfolio) && (
                 <div className="detail-card">
                   <div className="detail-icon-wrapper">
                     <Globe size={20} />
                   </div>
                   <div className="detail-content">
                     <label>Portfólio</label>
-                    <a href={user.link_portfolio_freelancer} target="_blank" rel="noopener noreferrer">
+                    <a href={user.link_portfolio_freelancer || user.portfolio} target="_blank" rel="noopener noreferrer">
                       Ver Portfólio
                     </a>
                   </div>
@@ -301,7 +294,7 @@ export default function Profile() {
         )}
 
         {/* Informações da Empresa */}
-        {user?.type_user === 'empresa' && (
+        {(user?.type_user === 'empresa' || user?.type === 'empresa') && (
           <div className="details-container">
             <h3 className="details-title">Informações da Empresa</h3>
 
@@ -320,24 +313,24 @@ export default function Profile() {
         )}
 
         {/* Informações de Contato */}
-        {(user?.phone_user || user?.city_user || user?.state_user || user?.linkedin_link_user || user?.insta_link_user) && (
+        {(user?.phone_user || user?.phone || user?.city_user || user?.city || user?.state_user || user?.state || user?.linkedin_link_user || user?.linkedin || user?.insta_link_user || user?.instagram) && (
           <div className="details-container">
             <h3 className="details-title">Informações de Contato</h3>
 
             <div className="details-grid">
-              {user?.phone_user && (
+              {(user?.phone_user || user?.phone) && (
                 <div className="detail-card">
                   <div className="detail-icon-wrapper">
                     <Phone size={20} />
                   </div>
                   <div className="detail-content">
                     <label>Telefone</label>
-                    <span>{user.phone_user}</span>
+                    <span>{user.phone_user || user.phone}</span>
                   </div>
                 </div>
               )}
 
-              {(user?.city_user || user?.state_user) && (
+              {(user?.city_user || user?.city || user?.state_user || user?.state) && (
                 <div className="detail-card">
                   <div className="detail-icon-wrapper">
                     <MapPin size={20} />
@@ -345,38 +338,35 @@ export default function Profile() {
                   <div className="detail-content">
                     <label>Localização</label>
                     <span>
-                      {user.city_user && user.state_user
-                        ? `${user.city_user}, ${user.state_user}`
-                        : user.city_user || user.state_user
-                      }
+                      {user.city_user || user.city}{user.city_user || user.city ? ', ' : ''}{user.state_user || user.state}
                     </span>
                   </div>
                 </div>
               )}
 
-              {user?.linkedin_link_user && (
+              {(user?.linkedin_link_user || user?.linkedin) && (
                 <div className="detail-card">
                   <div className="detail-icon-wrapper">
                     <Linkedin size={20} />
                   </div>
                   <div className="detail-content">
                     <label>LinkedIn</label>
-                    <a href={user.linkedin_link_user} target="_blank" rel="noopener noreferrer">
-                      {user.linkedin_link_user}
+                    <a href={user.linkedin_link_user || user.linkedin} target="_blank" rel="noopener noreferrer">
+                      {user.linkedin_link_user || user.linkedin}
                     </a>
                   </div>
                 </div>
               )}
 
-              {user?.insta_link_user && (
+              {(user?.insta_link_user || user?.instagram) && (
                 <div className="detail-card">
                   <div className="detail-icon-wrapper">
                     <Instagram size={20} />
                   </div>
                   <div className="detail-content">
                     <label>Instagram</label>
-                    <a href={user.insta_link_user} target="_blank" rel="noopener noreferrer">
-                      {user.insta_link_user}
+                    <a href={user.insta_link_user || user.instagram} target="_blank" rel="noopener noreferrer">
+                      {user.insta_link_user || user.instagram}
                     </a>
                   </div>
                 </div>
@@ -386,17 +376,17 @@ export default function Profile() {
         )}
 
         {/* Biografia */}
-        {user?.bio_user && (
+        {(user?.bio_user || user?.bio) && (
           <div className="details-container">
             <h3 className="details-title">Sobre</h3>
             <div className="bio-content">
-              <p>{user.bio_user}</p>
+              <p>{user.bio_user || user.bio}</p>
             </div>
           </div>
         )}
 
-        {/* Skills - CORRIGIDO */}
-        {user?.skills && Array.isArray(user.skills) && user.skills.length > 0 && (
+        {/* Skills - Ajustado para pegar tanto do novo quanto do antigo formato */}
+        {(user?.skills && Array.isArray(user.skills) && user.skills.length > 0) && (
           <div className="details-container">
             <h3 className="details-title">
               <Code size={24} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
@@ -405,7 +395,7 @@ export default function Profile() {
             <div className="skills-container">
               <div className="skills-grid">
                 {user.skills
-                  .filter(skill => skill && skill.trim() !== '') // Filtra skills vazias
+                  .filter(skill => skill && skill.trim() !== '')
                   .map((skill, index) => (
                     <div key={`skill-${index}`} className="skill-badge">
                       <span className="skill-icon">
@@ -418,16 +408,12 @@ export default function Profile() {
                   ))}
               </div>
             </div>
-            {user.skills.length === 0 && (
-              <div className="no-skills-message">
-                <p>Nenhuma habilidade cadastrada.</p>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Skills para empresas ou quando não há skills */}
-        {(!user?.skills || user.skills.length === 0) && user?.type_user === 'freelancer' && (
+        {/* Mensagem quando não há skills para freelancer */}
+        {(!user?.skills || user.skills.length === 0) && 
+         (user?.type_user === 'freelancer' || user?.type === 'freelancer') && (
           <div className="details-container">
             <h3 className="details-title">
               <Code size={24} style={{ marginRight: '10px', verticalAlign: 'middle' }} />
@@ -441,14 +427,12 @@ export default function Profile() {
 
         {/* Botão de Edição */}
         <div className="profile-actions">
-          {user?.type_user === 'empresa' && (
+          {user?.type_user === 'empresa' || user?.type === 'empresa' ? (
             <Link to="/editarEmpresa" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
             </Link>
-          )}
-
-          {user?.type_user === 'freelancer' && (
+          ) : (
             <Link to="/editar" className="edit-profile-btn">
               <Edit size={18} />
               Editar Perfil
