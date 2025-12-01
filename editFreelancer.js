@@ -1,4 +1,4 @@
-[file name]: editFreelancer.js (completo)
+[file name]: editFreelancer.js (versão final corrigida)
 [file content begin]
 import '../styles/index.css';
 import '../styles/profile.css';
@@ -191,7 +191,7 @@ export default function EditFreelancer() {
     return errors;
   };
 
-  // ENVIAR DADOS PARA ATUALIZAÇÃO
+  // ENVIAR DADOS PARA ATUALIZAÇÃO - CORRIGIDO
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -206,25 +206,25 @@ export default function EditFreelancer() {
         throw new Error(validationErrors.join(", "));
       }
 
-      // PREPARAR DADOS
+      // PREPARAR DADOS NO FORMATO QUE O BACKEND ESPERA
       const updateData = {
-        // Dados da tabela USER
-        name_user: formData.name_user.trim(),
-        email_user: formData.email_user.trim(),
-        phone_user: formData.phone_user ? formData.phone_user.trim() : '',
-        city_user: formData.city_user ? formData.city_user.trim() : '',
-        state_user: formData.state_user ? formData.state_user.trim() : '',
-        linkedin_link_user: formData.linkedin_link_user ? formData.linkedin_link_user.trim() : '',
-        insta_link_user: formData.insta_link_user ? formData.insta_link_user.trim() : '',
-        bio_user: formData.bio_user ? formData.bio_user.trim() : '',
+        // Dados da tabela USER - mantendo os nomes do formulário
+        name: formData.name_user.trim(),
+        email: formData.email_user.trim(),
+        phone: formData.phone_user ? formData.phone_user.trim() : '',
+        city: formData.city_user ? formData.city_user.trim() : '',
+        state: formData.state_user ? formData.state_user.trim() : '',
+        linkedin: formData.linkedin_link_user ? formData.linkedin_link_user.trim() : '',
+        instagram: formData.insta_link_user ? formData.insta_link_user.trim() : '',
+        bio: formData.bio_user ? formData.bio_user.trim() : '',
 
         // Dados da tabela FREELANCER
-        cpf_freelancer: formData.cpf_freelancer ? String(formData.cpf_freelancer).replace(/\D/g, '') : '',
-        birthday_freelancer: formData.birthday_freelancer || '',
-        ocupation_freelancer: formData.ocupation_freelancer ? String(formData.ocupation_freelancer).trim() : '',
-        link_portfolio_freelancer: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : '',
+        cpf: formData.cpf_freelancer ? String(formData.cpf_freelancer).replace(/\D/g, '') : '',
+        birthday: formData.birthday_freelancer || '',
+        occupation: formData.ocupation_freelancer ? String(formData.ocupation_freelancer).trim() : '',
+        portfolio: formData.link_portfolio_freelancer ? formData.link_portfolio_freelancer.trim() : '',
 
-        // SKILLS
+        // SKILLS - enviar como campos individuais
         skill_1: formData.skill_1 ? formData.skill_1.trim() : '',
         skill_2: formData.skill_2 ? formData.skill_2.trim() : '',
         skill_3: formData.skill_3 ? formData.skill_3.trim() : '',
@@ -233,17 +233,25 @@ export default function EditFreelancer() {
         skill_6: formData.skill_6 ? formData.skill_6.trim() : '',
       };
 
-      // Adicionar senha se fornecida
+      // Adicionar senha se fornecida (o backend espera "senha" não "new_password")
       if (formData.new_password && formData.new_password.trim() !== '' && 
           formData.new_password === formData.confirmarSenha) {
-        updateData.new_password = formData.new_password.trim();
+        updateData.senha = formData.new_password.trim();
       }
 
       console.log("📤 Dados preparados para envio:", updateData);
+      console.log("🔍 Skills que serão enviadas:", {
+        skill_1: updateData.skill_1,
+        skill_2: updateData.skill_2,
+        skill_3: updateData.skill_3,
+        skill_4: updateData.skill_4,
+        skill_5: updateData.skill_5,
+        skill_6: updateData.skill_6
+      });
 
-      // Chamar backend para atualizar freelancer
-      const response = await fetch('http://localhost:3002/api/profile/freelancer', {
-        method: 'PUT',
+      // Chamar a rota de update-profile
+      const response = await fetch('http://localhost:3002/api/update-profile', {
+        method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -264,6 +272,7 @@ export default function EditFreelancer() {
 
       if (result.success) {
         alert("✅ Perfil atualizado com sucesso!");
+        // Recarregar os dados do perfil antes de navegar
         navigate('/profile');
       } else {
         throw new Error(result.error || 'Erro desconhecido ao atualizar perfil');
